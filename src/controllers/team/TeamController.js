@@ -13,8 +13,8 @@ const createTeam = asyncHandler(async (req, res) => {
     }
 
     const { name, description } = req.body;
-    const { id } = req.user;
-    
+    const userId = req.user.id;
+  
     const existingTeam = await prisma.team.findUnique({ where: { name } });
     if (existingTeam) {
         return res.status(400).json({
@@ -27,7 +27,7 @@ const createTeam = asyncHandler(async (req, res) => {
         data: {
             name,
             description: description || null,
-            created_by: id,
+            created_by: userId,
         },
         include: { createdBy: true },
     });
