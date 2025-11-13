@@ -15,28 +15,36 @@ const createTeam = asyncHandler(async (req, res) => {
     const { name, description } = req.body;
     const userId = req.user.id;
   
-    const existingTeam = await prisma.team.findUnique({ where: { name } });
-    if (existingTeam) {
-        return res.status(400).json({
+    try {
+        const existingTeam = await prisma.team.findUnique({ where: { name } });
+        if (existingTeam) {
+            return res.status(400).json({
+                success: false,
+                message: "Team with this name already exists.",
+            });
+        }
+
+        const team = await prisma.team.create({
+            data: {
+                name,
+                description: description || null,
+                created_by: userId,
+            },
+            include: { createdBy: true },
+        });
+
+        res.status(201).json({
+            success: true,
+            message: "Team created successfully",
+            data: team,
+        });
+    } catch (error) {
+        console.error('Database error in createTeam:', error);
+        return res.status(500).json({
             success: false,
-            message: "Team with this name already exists.",
+            message: "Database error occurred",
         });
     }
-
-    const team = await prisma.team.create({
-        data: {
-            name,
-            description: description || null,
-            created_by: userId,
-        },
-        include: { createdBy: true },
-    });
-
-    res.status(201).json({
-        success: true,
-        message: "Team created successfully",
-        data: team,
-    });
 });
 
 const getAllTeams = asyncHandler(async (req, res) => {
