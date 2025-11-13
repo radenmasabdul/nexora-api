@@ -6,7 +6,7 @@ const { validateCreateTeam, validateUpdateTeam } = require('../../utils/validato
 const verifyToken = require('../../middlewares/auth/auth');
 
 router.get('/all', verifyToken, getAllTeams);
-router.get('/:id', verifyToken, getTeamById);
+router.get('/:id', verifyToken, getTeamsById);
 router.post('/create', verifyToken, validateCreateTeam, createTeam);
 router.put('/update/:id', verifyToken, validateUpdateTeam, updateTeam);
 router.delete('/delete/:id', verifyToken, deleteTeam);
