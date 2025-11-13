@@ -8,23 +8,12 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  name         String   @db.VarChar(255)
-  email        String   @unique @db.VarChar(255)
-  password     String   @db.VarChar(255)
-  role         String   @db.VarChar(50)
-  avatar_url   String?  @db.VarChar(255)
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
-  createdTeams Team[]
-}
-
-model Team {
-  id          String   @id @default(uuid())
-  name        String   @unique @db.VarChar(255)
-  description String?
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-  created_by  String
-  createdBy   User     @relation(fields: [created_by], references: [id])
+  id         String   @id @default(uuid())
+  name       String   @db.VarChar(255)
+  email      String   @unique @db.VarChar(255)
+  password   String   @db.VarChar(255)
+  role       String   @db.VarChar(50)
+  avatar_url String?  @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
