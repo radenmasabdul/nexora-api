@@ -1,4 +1,4 @@
-const prisma = require('../../../prisma/client');
+const prisma = require('../../../prisma/client/index');
 const asyncHandler = require('../../utils/handlers/asyncHandler');
 const { validationResult } = require('express-validator');
 
