@@ -58,12 +58,14 @@ const getAllUsers = asyncHandler(async (req, res) => {
     const skip = (page - 1) * limit;
     const search = req.query.search || '';
 
-    const whereCondition = {
-        OR: [
-            { name: { contains: search, mode: 'insensitive' } },
-            { email: { contains: search, mode: 'insensitive' } },
-        ]
-    };
+    const whereCondition = search
+        ? {
+            OR: [
+                { name: { contains: search, mode: 'insensitive' } },
+                { email: { contains: search, mode: 'insensitive' } },
+            ],
+        }
+        : {};
 
     const totalData = await prisma.user.count({ where: whereCondition });
 
