@@ -28,7 +28,7 @@ model User {
 
 model Team {
   id          String    @id @default(uuid())
-  name        String    @db.VarChar(255)
+  name        String    @unique @db.VarChar(255)
   description String?   @db.Text
   created_at  DateTime  @default(now())
   updated_at  DateTime  @updatedAt
