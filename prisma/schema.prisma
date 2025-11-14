@@ -8,25 +8,40 @@ datasource db {
 }
 
 model User {
-  id         String   @id @default(uuid())
-  name       String   @db.VarChar(255)
-  email      String   @unique @db.VarChar(255)
-  password   String   @db.VarChar(255)
-  role       String   @db.VarChar(50)
-  avatar_url String?  @db.VarChar(255)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id                String        @id @default(uuid())
+  name              String        @db.VarChar(255)
+  email             String        @unique @db.VarChar(255)
+  password          String        @db.VarChar(255)
+  role              String        @db.VarChar(50)
+  avatar_url        String?       @db.VarChar(255)
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @updatedAt
 
-  createdTeams Team[]
+  createdTeams      Team[]        @relation("UserCreatedTeams")
+  teamMemberships   TeamMember[]
 }
 
 model Team {
-  id          String   @id @default(uuid())
-  name        String   @unique @db.VarChar(255)
-  description String?  @db.Text
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-  created_by_id String
+  id                String        @id @default(uuid())
+  name              String        @unique @db.VarChar(255)
+  description       String?       @db.Text
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @updatedAt
+  created_by_id     String
 
-  createdBy User @relation(fields: [created_by_id], references: [id])
+  createdBy         User          @relation("UserCreatedTeams", fields: [created_by_id], references: [id])
+  members           TeamMember[]
+}
+
+model TeamMember {
+  id                String        @id @default(uuid())
+  team_id           String
+  user_id           String
+  role              String        @db.VarChar(50)
+  joined_at         DateTime      @default(now())
+
+  team              Team          @relation(fields: [team_id], references: [id])
+  user              User          @relation(fields: [user_id], references: [id])
+
+  @@unique([team_id, user_id])
 }
