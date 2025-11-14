@@ -13,22 +13,38 @@ const register = asyncHandler(async (req, res) => {
         });
     }
 
-    const hashPassword = await bcrypt.hash(req.body.password, 10);
+    const { name, email, password, role } = req.body;
+    
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+        where: { email }
+    });
+    
+    if (existingUser) {
+        return res.status(409).json({
+            success: false,
+            message: "User with this email already exists",
+        });
+    }
+
+    const hashPassword = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
         data: {
-            name: req.body.name,
-            email: req.body.email,
+            name,
+            email,
             password: hashPassword,
-            role: req.body.role || 'ADMIN',
+            role: role || 'ADMIN',
         },
     });
+    
+    console.log(`New user registered: ${email}`);
 
-    const { password, ...userWithoutPassword } = user;
+    const { password: _, ...userWithoutPassword } = user;
 
     res.status(201).json({
         success: true,
-        message: "Register successfully",
+        message: "User registered successfully",
         data: userWithoutPassword,
     });
 });

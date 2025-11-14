@@ -15,8 +15,8 @@ const validateCreateProject = [
 
     body('status')
         .notEmpty().withMessage('Status is required')
-        .isIn(['active', 'on_hold', 'completed'])
-        .withMessage('Invalid status value. Allowed values: active, on_hold, completed'),
+        .isIn(['ACTIVE', 'ON_HOLD', 'COMPLETED'])
+        .withMessage('Invalid status value. Allowed values: ACTIVE, ON_HOLD, COMPLETED'),
 
     body('deadline')
         .notEmpty().withMessage('Deadline is required')
@@ -34,8 +34,8 @@ const validateUpdateProject = [
 
     body('status')
         .notEmpty().withMessage('Status is required')
-        .isIn(['active', 'on_hold', 'completed'])
-        .withMessage('Invalid status value. Allowed values: active, on_hold, completed'),
+        .isIn(['ACTIVE', 'ON_HOLD', 'COMPLETED'])
+        .withMessage('Invalid status value. Allowed values: ACTIVE, ON_HOLD, COMPLETED'),
 
     body('deadline')
         .notEmpty().withMessage('Deadline is required')

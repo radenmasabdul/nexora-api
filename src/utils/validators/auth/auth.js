@@ -1,6 +1,5 @@
 const { body } = require('express-validator');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../../../prisma/client');
 
 const validateRegister = [
     body('name')
@@ -31,8 +30,8 @@ const validateRegister = [
     body('role')
         .trim()
         .notEmpty().withMessage('Role is required')
-        .isIn(['admin', 'manager', 'member']).withMessage('Role must be either admin, manager, or member'),
-]
+        .isIn(['ADMIN', 'MANAGER', 'MEMBER']).withMessage('Role must be either ADMIN, MANAGER, or MEMBER'),
+];
 
 const validateLogin = [
     body('email')
@@ -42,6 +41,6 @@ const validateLogin = [
     body('password')
         .notEmpty().withMessage('Password is required')
         .isLength({ min: 6 }).withMessage('Password must be at least 6 characters long')
-]
+];
 
 module.exports = { validateRegister, validateLogin };

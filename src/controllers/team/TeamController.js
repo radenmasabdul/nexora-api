@@ -23,6 +23,8 @@ const createTeam = asyncHandler(async (req, res) => {
         });
     }
     
+    console.log(`Creating team '${name}' by user ${creatorId}`);
+    
     const newTeam = await prisma.team.create({
         data: {
             name,
