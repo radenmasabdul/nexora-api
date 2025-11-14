@@ -1,5 +1,5 @@
 const { body } = require('express-validator');
-const prisma = require('../../../prisma/client');
+const prisma = require('../../../prisma/client/index.js');
 
 const validateRegister = [
     body('name')

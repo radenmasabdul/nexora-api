@@ -1,4 +1,4 @@
-const prisma = require('../../../prisma/client');
+const prisma = require('../../../prisma/client/index.js');
 const asyncHandler = require('../../utils/handlers/asyncHandler');
 const bcrypt = require('bcryptjs');
 const { validationResult } = require('express-validator');
@@ -14,14 +14,14 @@ const createUser = asyncHandler(async (req, res) => {
     }
 
     const { name, email, password, role, avatar_url } = req.body;
-    const validRoles = ['admin', 'manager', 'member'];
+    const validRoles = ['ADMIN', 'MANAGER', 'MEMBER'];
 
-    if (role && !validRoles.includes(role)) {
+    if (role && !validRoles.includes(role.toUpperCase())) {
         return res.status(400).json({
             success: false,
-            message: 'Invalid role value. Allowed roles: admin, manager, member.',
+            message: 'Invalid role value. Allowed roles: ADMIN, MANAGER, MEMBER.',
         });
-    };
+    }
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
@@ -40,7 +40,7 @@ const createUser = asyncHandler(async (req, res) => {
             name,
             email,
             password: hashPassword,
-            role,
+            role: role ? role.toUpperCase() : 'ADMIN',
             avatar_url: avatar_url || null,
         },
     });
@@ -142,17 +142,17 @@ const updateUser = asyncHandler(async (req, res) => {
             message: "Validation error",
             errors: errors.array(),
         });
-    };
+    }
 
     const { name, email, password, role, avatar_url } = req.body;
-    const validRoles = ['admin', 'manager', 'member'];
+    const validRoles = ['ADMIN', 'MANAGER', 'MEMBER'];
 
-    if (role && !validRoles.includes(role)) {
+    if (role && !validRoles.includes(role.toUpperCase())) {
         return res.status(400).json({
             success: false,
-            message: 'Invalid role value. Allowed roles: admin, manager, member.',
+            message: 'Invalid role value. Allowed roles: ADMIN, MANAGER, MEMBER.',
         });
-    };
+    }
 
     const existingUser = await prisma.user.findUnique({ where: { id } });
     if (!existingUser) {
@@ -160,7 +160,7 @@ const updateUser = asyncHandler(async (req, res) => {
             success: false,
             message: 'User not found.',
         });
-    };
+    }
 
     if (email && email !== existingUser.email) {
         const emailTaken = await prisma.user.findUnique({ where: { email } });
@@ -171,16 +171,18 @@ const updateUser = asyncHandler(async (req, res) => {
                 message: 'Email already in use by another user.',
             });
         }
-    };
+    }
 
     const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
+    
+    console.log(`Updating user ${existingUser.email}`);
 
     const updatedUser = await prisma.user.update({
         where: { id },
         data: {
             name,
             email,
-            role,
+            role: role ? role.toUpperCase() : existingUser.role,
             avatar_url: avatar_url || null,
             ...(hashedPassword && { password: hashedPassword }),
         },
