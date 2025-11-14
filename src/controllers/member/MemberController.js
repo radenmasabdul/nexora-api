@@ -51,14 +51,7 @@ const getAllMembers = asyncHandler(async (req, res) => {
     const skip = (page - 1) * limit;
     const search = req.query.search || '';
 
-    const whereCondition = search
-        ? {
-            OR: [
-                { user: { name: { contains: search, mode: 'insensitive' } } },
-                { user: { email: { contains: search, mode: 'insensitive' } } },
-            ],
-        }
-        : {};
+    const whereCondition = search ? { role: { contains: search, mode: 'insensitive'} } : {};
 
     const totalData = await prisma.teamMember.count({ where: whereCondition });
 
@@ -66,7 +59,7 @@ const getAllMembers = asyncHandler(async (req, res) => {
         where: whereCondition,
         skip,
         take: limit,
-        orderBy: { created_at: 'asc' },
+        orderBy: { joined_at: 'asc' },
         include: {
             team: {
                 select: { id: true, name: true, description: true }
