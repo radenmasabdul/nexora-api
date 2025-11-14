@@ -14,7 +14,15 @@ const createProject = asyncHandler(async (req, res) => {
 
     const { team_id, name, description, status, deadline } = req.body;
 
-    const existingProject = await prisma.project.findUnique({ where: { team_id_name : { team_id, name } } });
+    const existingProject = await prisma.project.findFirst({
+       where: {
+            AND: [
+                { team_id: team_id },
+                { name: name },
+            ]
+        }
+    });
+
     if (existingProject) {
         return res.status(409).json({
             success: false,
@@ -128,7 +136,15 @@ const updateProject = asyncHandler(async (req, res) => {
 
     const { team_id, name, description, status, deadline } = req.body;
 
-    const existingProject = await prisma.project.findUnique({ where: { team_id_name : { team_id, name } } });
+    const existingProject = await prisma.project.findFirst({
+        where: { 
+            AND: [
+                { team_id: team_id },
+                { name: name },
+                { id: { not: id } }
+            ]
+        }
+    })
     if (existingProject && existingProject.id !== id) {
         return res.status(409).json({
             success: false,
