@@ -27,9 +27,9 @@ const login = asyncHandler(async (req, res) => {
     })
 
     if (!user) {
-        return res.status(404).json({
+        return res.status(401).json({
             success: false,
-            message: "User not found",
+            message: "Invalid credentials",
         });
     }
 
@@ -38,8 +38,16 @@ const login = asyncHandler(async (req, res) => {
     if (!validPassword) {
         return res.status(401).json({
             success: false,
-            message: "Invalid password",
-        })
+            message: "Invalid credentials",
+        });
+    }
+
+    if (!process.env.JWT_SECRET) {
+        console.error('JWT_SECRET is not defined');
+        return res.status(500).json({
+            success: false,
+            message: "Server configuration error",
+        });
     }
 
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
@@ -48,6 +56,8 @@ const login = asyncHandler(async (req, res) => {
 
     const decoded = jwt.decode(token);
     const { password: _, ...userWithoutPassword } = user;
+    
+    console.log(`User ${user.email} logged in successfully`);
 
     res.status(200).json({
         success: true,
@@ -58,6 +68,6 @@ const login = asyncHandler(async (req, res) => {
             expiresAt: decoded.exp,
         }
     });
-})
+});
 
-module.exports = { login }
+module.exports = { login };

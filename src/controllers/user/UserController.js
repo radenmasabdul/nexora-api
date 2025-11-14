@@ -32,6 +32,8 @@ const createUser = asyncHandler(async (req, res) => {
     }
 
     const hashPassword = await bcrypt.hash(password, 10);
+    
+    console.log(`Creating user ${email} with role ${role || 'ADMIN'}`);
 
     const user = await prisma.user.create({
         data: {
@@ -203,6 +205,8 @@ const deleteUser = asyncHandler(async (req, res) => {
             message: "User not found.",
         });
     }
+    
+    console.log(`Deleting user ${existingUser.email} by user ${req.user.id}`);
 
     await prisma.user.delete({ where: { id } });
 

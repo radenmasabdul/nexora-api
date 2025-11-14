@@ -132,7 +132,7 @@ const updateProject = asyncHandler(async (req, res) => {
             message: "Validation error",
             errors: errors.array(),
         });
-    };
+    }
 
     const { team_id, name, description, status, deadline } = req.body;
 
@@ -184,7 +184,7 @@ const deleteProject = asyncHandler(async (req, res) => {
             success: false,
             message: 'Project not found.',
         });
-    };
+    }
 
     await prisma.projects.delete({ where: { id } });
 

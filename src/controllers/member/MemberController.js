@@ -51,7 +51,15 @@ const getAllMembers = asyncHandler(async (req, res) => {
     const skip = (page - 1) * limit;
     const search = req.query.search || '';
 
-    const whereCondition = search ? { role: { contains: search, mode: 'insensitive'} } : {};
+    const whereCondition = search 
+        ? {
+            OR: [
+                { role: { contains: search, mode: 'insensitive' } },
+                { user: { name: { contains: search, mode: 'insensitive' } } },
+                { team: { name: { contains: search, mode: 'insensitive' } } },
+            ]
+        } 
+        : {};
 
     const totalData = await prisma.teamMember.count({ where: whereCondition });
 
@@ -134,7 +142,7 @@ const updateMember = asyncHandler(async (req, res) => {
             success: false,
             message: 'Member not found.',
         });
-    };
+    }
 
     const updatedMember = await prisma.teamMember.update({
         where: { id },
@@ -165,7 +173,7 @@ const deleteMember = asyncHandler(async (req, res) => {
             success: false,
             message: 'Member not found.',
         });
-    };
+    }
 
     await prisma.teamMember.delete({ where: { id } });
 
