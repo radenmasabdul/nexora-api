@@ -31,6 +31,7 @@ model Team {
 
   createdBy         User          @relation("UserCreatedTeams", fields: [created_by_id], references: [id])
   members           TeamMember[]
+  projects          Projects[]
 }
 
 model TeamMember {
@@ -44,4 +45,18 @@ model TeamMember {
   user              User          @relation(fields: [user_id], references: [id])
 
   @@unique([team_id, user_id])
+}
+
+model Projects {
+  id                String        @id @default(uuid())
+  team_id           String
+  name              String        @db.VarChar(255)
+  description       String?       @db.Text
+  status            String        @db.VarChar(50)
+  deadline          DateTime
+  created_at        DateTime      @default(now())
+
+  team              Team          @relation(fields: [team_id], references: [id])
+
+  @@unique([team_id, name])
 }
