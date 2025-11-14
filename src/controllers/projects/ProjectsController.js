@@ -1,5 +1,5 @@
-const prisma = require('../../prisma/client/index.js');
-const asyncHandler = require('../utils/handlers/asyncHandler');
+const prisma = require('../../../prisma/client/index.js');
+const asyncHandler = require('../../utils/handlers/asyncHandler');
 const { validationResult } = require('express-validator');
 
 const createProject = asyncHandler(async (req, res) => {
