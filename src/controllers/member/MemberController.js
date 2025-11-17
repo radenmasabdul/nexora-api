@@ -1,6 +1,7 @@
 const prisma = require('../../../prisma/client/index.js');
 const asyncHandler = require('../../utils/handlers/asyncHandler.js');
 const { validationResult } = require('express-validator');
+const { notifyTeamJoin, notifyRoleChange, notifyMemberRemoval } = require('../../utils/helpers/notificationHelper');
 
 const createMember = asyncHandler(async (req, res) => {
     const errors = validationResult(req);
@@ -37,6 +38,9 @@ const createMember = asyncHandler(async (req, res) => {
             },
         },
     });
+
+    // send welcome notification to new member
+    await notifyTeamJoin(team_id, user_id);
 
     res.status(201).json({
         success: true,
@@ -149,6 +153,11 @@ const updateMember = asyncHandler(async (req, res) => {
         },
     });
 
+    // send notification if role changed
+    if (role !== existingMember.role) {
+        await notifyRoleChange(existingMember.team_id, existingMember.user_id, role, req.user?.name || 'System');
+    }
+
     res.status(200).json({
         success: true,
         message: "Member updated successfully",
@@ -166,6 +175,9 @@ const deleteMember = asyncHandler(async (req, res) => {
             message: 'Member not found.',
         });
     };
+
+    // send notification before removal
+    await notifyMemberRemoval(existingMember.team_id, existingMember.user_id, req.user?.name || 'System');
 
     await prisma.teamMember.delete({ where: { id } });
 

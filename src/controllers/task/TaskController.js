@@ -1,6 +1,7 @@
 const prisma = require('../../../prisma/client/index.js');
 const asyncHandler = require('../../utils/handlers/asyncHandler');
 const { validationResult } = require('express-validator');
+const { notifyTaskAssignment, notifyTaskStatusChange, notifyTaskDeletion } = require('../../utils/helpers/notificationHelper');
 
 const createTask = asyncHandler(async (req, res) => {
     const errors = validationResult(req);
@@ -63,6 +64,9 @@ const createTask = asyncHandler(async (req, res) => {
             },
         },
     });
+
+    // send notification to assigned user
+    await notifyTaskAssignment(newTask.id, assign_to, req.user?.name || 'System');
 
     res.status(201).json({
         success: true,
@@ -229,6 +233,14 @@ const updateTask = asyncHandler(async (req, res) => {
         },
     });
 
+    // send notifications for changes
+    if (assign_to && assign_to !== currentTask.assign_to) {
+        await notifyTaskAssignment(id, assign_to, req.user?.name || 'System');
+    }
+    if (status && status !== currentTask.status) {
+        await notifyTaskStatusChange(id, status, req.user?.name || 'System');
+    }
+
     res.status(200).json({
         success: true,
         message: "Task updated successfully",
@@ -239,13 +251,21 @@ const updateTask = asyncHandler(async (req, res) => {
 const deleteTask = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
-    const existingTask = await prisma.task.findUnique({ where: { id } });
+    const existingTask = await prisma.task.findUnique({ 
+        where: { id },
+        include: {
+            assignedUser: { select: { id: true } }
+        }
+    });
     if (!existingTask) {
         return res.status(404).json({
             success: false,
             message: 'Task not found.',
         });
     }
+
+    // send notification before deletion
+    await notifyTaskDeletion(existingTask.title, existingTask.assign_to, req.user?.name || 'System');
 
     await prisma.task.delete({ where: { id } });
 

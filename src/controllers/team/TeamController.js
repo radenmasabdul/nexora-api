@@ -1,6 +1,7 @@
 const prisma = require('../../../prisma/client/index.js');
 const asyncHandler = require('../../utils/handlers/asyncHandler');
 const { validationResult } = require('express-validator');
+const { notifyTeamCreation } = require('../../utils/helpers/notificationHelper');
 
 const createTeam = asyncHandler(async (req, res) => {
     const errors = validationResult(req);
@@ -37,6 +38,9 @@ const createTeam = asyncHandler(async (req, res) => {
             },
         },
     });
+
+    // send notification to admins about new team creation
+    await notifyTeamCreation(newTeam.id, creatorId);
 
     res.status(201).json({
         success: true,

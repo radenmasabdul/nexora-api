@@ -1,6 +1,7 @@
 const prisma = require('../../../prisma/client/index.js');
 const asyncHandler = require('../../utils/handlers/asyncHandler');
 const { validationResult } = require('express-validator');
+const { notifyNewProject, notifyProjectStatusChange, notifyProjectDeletion } = require('../../utils/helpers/notificationHelper');
 
 const createProject = asyncHandler(async (req, res) => {
     const errors = validationResult(req);
@@ -44,6 +45,9 @@ const createProject = asyncHandler(async (req, res) => {
             },
         },
     });
+
+    // send notification to team members
+    await notifyNewProject(newProject.id, req.user?.id || 'System');
 
     res.status(201).json({
         success: true,
@@ -152,6 +156,9 @@ const updateProject = asyncHandler(async (req, res) => {
         });
     }
 
+    // get current project for comparison
+    const currentProject = await prisma.projects.findUnique({ where: { id } });
+
     const updatedProject = await prisma.projects.update({
         where: { id },
         data: {
@@ -167,6 +174,11 @@ const updateProject = asyncHandler(async (req, res) => {
             },
         },
     });
+
+    // send notification if status changed
+    if (status && status !== currentProject.status) {
+        await notifyProjectStatusChange(id, status, req.user?.name || 'System');
+    }
 
     res.status(200).json({
         success: true,
@@ -185,6 +197,9 @@ const deleteProject = asyncHandler(async (req, res) => {
             message: 'Project not found.',
         });
     };
+
+    // send notification before deletion
+    await notifyProjectDeletion(existingProject.name, existingProject.team_id, req.user?.name || 'System');
 
     await prisma.projects.delete({ where: { id } });
 
