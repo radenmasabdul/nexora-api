@@ -20,6 +20,7 @@ model User {
   createdTeams      Team[]        @relation("UserCreatedTeams")
   teamMemberships   TeamMember[]
   assignedTasks     Task[]        @relation("UserAssignedTasks")
+  comments          Comments[]
 }
 
 model Team {
@@ -77,4 +78,17 @@ model Task {
 
   project           Projects      @relation(fields: [project_id], references: [id])
   assignedUser      User          @relation("UserAssignedTasks", fields: [assign_to], references: [id])
+
+  comment           Comments[]
+}
+
+model Comments {
+  id                String        @id @default(uuid())
+  task_id           String
+  user_id           String
+  content           String        @db.Text
+  created_at        DateTime      @default(now())
+
+  task              Task          @relation(fields: [task_id], references: [id])
+  user              User          @relation(fields: [user_id], references: [id])
 }
