@@ -1,6 +1,7 @@
 const prisma = require('../../../prisma/client/index.js');
 const asyncHandler = require('../../utils/handlers/asyncHandler.js');
 const { validationResult } = require('express-validator');
+const { notifyNewComment, notifyCommentDeletion } = require('../../utils/helpers/notificationHelper');
 
 const createComment = asyncHandler(async (req, res) => {
     const errors = validationResult(req);
@@ -49,6 +50,9 @@ const createComment = asyncHandler(async (req, res) => {
             },
         },
     });
+
+    // send notification for new comment
+    await notifyNewComment(task_id, user_id);
 
     res.status(201).json({
         success: true,
@@ -176,13 +180,30 @@ const updateComment = asyncHandler(async (req, res) => {
 const deleteComment = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
-    const existingComment = await prisma.comments.findUnique({ where: { id } });
+    const existingComment = await prisma.comments.findUnique({ 
+        where: { id },
+        include: {
+            task: {
+                include: {
+                    assignedUser: { select: { id: true } }
+                }
+            }
+        }
+    });
     if (!existingComment) {
         return res.status(404).json({
             success: false,
             message: 'Comment not found.',
         });
     };
+
+    // send notification before deletion
+    await notifyCommentDeletion(
+        existingComment.task_id, 
+        existingComment.content, 
+        req.user?.id || 'System', 
+        existingComment.task.assignedUser.id
+    );
 
     await prisma.comments.delete({ where: { id } });
 
