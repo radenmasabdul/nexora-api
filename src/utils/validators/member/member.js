@@ -11,15 +11,15 @@ const validateCreateTeamMember = [
 
     body('role')
         .notEmpty().withMessage('Role is required')
-        .isIn(['admin', 'manager', 'member'])
-        .withMessage('Invalid role value. Allowed roles: admin, manager, member.'),
+        .isIn(['owner', 'lead', 'member'])
+        .withMessage('Invalid role value. Allowed roles: owner, lead, member.'),
 ]
 
 const validateUpdateTeamMember = [
     body('role')
         .notEmpty().withMessage('Role is required')
-        .isIn(['admin', 'manager', 'member'])
-        .withMessage('Invalid role value. Allowed roles: admin, manager, member.'), 
+        .isIn(['owner', 'lead', 'member'])
+        .withMessage('Invalid role value. Allowed roles: owner, lead, member.'), 
 ]
 
 module.exports = { validateCreateTeamMember, validateUpdateTeamMember };
