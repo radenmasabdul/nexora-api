@@ -16,7 +16,7 @@ const createComment = asyncHandler(async (req, res) => {
 
     const task = await prisma.task.findUnique({
         where: { id: task_id },
-        include: { project: { include: { members: true } } }
+        include: { project: { include: { team: { include: { members: true } } } } }
     });
     
     if (!task) {
@@ -26,7 +26,7 @@ const createComment = asyncHandler(async (req, res) => {
         });
     }
 
-    const hasAccess = task.project.members.some(member => member.user_id === user_id);
+    const hasAccess = task.project.team.members.some(member => member.user_id === user_id);
     if (!hasAccess) {
         return res.status(403).json({
             success: false,
