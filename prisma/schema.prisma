@@ -19,6 +19,7 @@ model User {
 
   createdTeams      Team[]        @relation("UserCreatedTeams")
   teamMemberships   TeamMember[]
+  assignedTasks     Task[]        @relation("UserAssignedTasks")
 }
 
 model Team {
@@ -57,6 +58,23 @@ model Projects {
   created_at        DateTime      @default(now())
 
   team              Team          @relation(fields: [team_id], references: [id])
+  tasks             Task[]
 
   @@unique([team_id, name])
+}
+
+model Task {
+  id                String        @id @default(uuid())
+  project_id        String
+  assign_to         String
+  title             String        @db.VarChar(255)
+  description       String?       @db.Text
+  priority          String        @db.VarChar(50)
+  status            String        @db.VarChar(50)
+  due_date          DateTime
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @updatedAt
+
+  project           Projects      @relation(fields: [project_id], references: [id])
+  assignedUser      User          @relation("UserAssignedTasks", fields: [assign_to], references: [id])
 }
