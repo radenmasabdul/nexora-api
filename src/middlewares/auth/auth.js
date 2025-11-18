@@ -2,12 +2,20 @@ const jwt = require('jsonwebtoken');
 
 const verifyToken = (req, res, next) => {
     const authHeader = req.headers.authorization;
+    let token;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ message: 'Unauthenticated.' });
+    // cek token dari Authorization header dulu
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.split(' ')[1];
+    }
+    // jika tidak ada, cek dari cookie
+    else if (req.cookies && req.cookies.token) {
+        token = req.cookies.token;
     }
 
-    const token = authHeader.split(' ')[1];
+    if (!token) {
+        return res.status(401).json({ message: 'Unauthenticated.' });
+    }
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
