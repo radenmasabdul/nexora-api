@@ -140,6 +140,14 @@ const updateProject = asyncHandler(async (req, res) => {
 
     const { team_id, name, description, status, deadline } = req.body;
 
+    const currentProject = await prisma.projects.findUnique({ where: { id } });
+    if (!currentProject) {
+        return res.status(404).json({
+            success: false,
+            message: 'Project not found.',
+        });
+    }
+
     const existingProject = await prisma.projects.findFirst({
         where: { 
             AND: [
@@ -155,9 +163,6 @@ const updateProject = asyncHandler(async (req, res) => {
             message: 'Project with the same name already exists in the team.',
         });
     }
-
-    // get current project for comparison
-    const currentProject = await prisma.projects.findUnique({ where: { id } });
 
     const updatedProject = await prisma.projects.update({
         where: { id },

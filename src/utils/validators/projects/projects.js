@@ -15,8 +15,8 @@ const validateCreateProject = [
 
     body('status')
         .notEmpty().withMessage('Status is required')
-        .isIn(['active', 'on_hold', 'completed'])
-        .withMessage('Invalid status value. Allowed values: active, on_hold, completed'),
+        .isIn(['planning', 'in_progress', 'completed', 'on_hold'])
+        .withMessage('Invalid status value. Allowed values: planning, in_progress, completed, on_hold'),
 
     body('deadline')
         .notEmpty().withMessage('Deadline is required')
@@ -24,6 +24,10 @@ const validateCreateProject = [
 ];
 
 const validateUpdateProject = [
+    body('team_id')
+        .notEmpty().withMessage('Team ID is required')
+        .isUUID().withMessage('Team ID must be a valid UUID'),
+
     body('name')
         .notEmpty().withMessage('Project name is required')
         .isLength({ max: 100 }).withMessage('Project name cannot exceed 100 characters'),
@@ -34,8 +38,8 @@ const validateUpdateProject = [
 
     body('status')
         .notEmpty().withMessage('Status is required')
-        .isIn(['active', 'on_hold', 'completed'])
-        .withMessage('Invalid status value. Allowed values: active, on_hold, completed'),
+        .isIn(['planning', 'in_progress', 'completed', 'on_hold'])
+        .withMessage('Invalid status value. Allowed values: planning, in_progress, completed, on_hold'),
 
     body('deadline')
         .notEmpty().withMessage('Deadline is required')
