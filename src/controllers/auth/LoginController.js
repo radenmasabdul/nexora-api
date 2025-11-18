@@ -49,6 +49,14 @@ const login = asyncHandler(async (req, res) => {
     const decoded = jwt.decode(token);
     const { password: _, ...userWithoutPassword } = user;
 
+    // set JWT di httpOnly cookie untuk keamanan ekstra
+    res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 12 * 60 * 60 * 1000 // 12 hours
+    });
+
     res.status(200).json({
         success: true,
         message: "Login successful",
