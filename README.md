@@ -1,0 +1,255 @@
+# 🚀 Nexora API - Smart Internal Dashboard for Modern Teams
+
+<p align="center">
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" width="50" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/express/express-original.svg" width="50" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg" width="50" />
+  <img src="https://avatars.githubusercontent.com/u/77690634?s=200&v=4" width="50" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/prisma/prisma-original.svg" width="50" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg" width="50" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/jest/jest-plain.svg" width="50" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postman/postman-original.svg" width="50" />
+</p>
+
+#
+Nexora API is a fast, scalable, and secure REST backend designed to power modern internal dashboards with ease. It prioritizes performance, security, and seamless integration to support the needs of teams and large-scale applications.
+
+## 🚀 Key Features
+
+- **Authentication & Authorization** — Secure login/register system using JWT with role-based access control.
+- **Team Management** — Create and manage teams with flexible membership handling.
+- **Project Management** — Organize projects within teams with deadline tracking.
+- **Task Management** — Assign tasks, track progress, and manage priority levels.
+- **Comment System** — Real-time collaboration on tasks through threaded comments.
+- **Activity Logging** — Automatically track every user action for audit and transparency.
+- **Notifications** — Receive updates for important events and changes.
+- **Rate Limiting** — Protect the API from abuse and excessive requests.
+- **Comprehensive Testing** — Includes unit and integration tests for reliability.
+
+## 🛠️ Tech Stack
+
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Database**: PostgreSQL
+- **ORM**: Prisma
+- **Authentication**: JWT + bcryptjs
+- **Validation**: express-validator
+- **Security**: Helmet, CORS, Rate Limiting
+- **Testing**: Jest + Supertest
+- **Development**: Nodemon
+
+## 📋 Prerequisites
+
+- Node.js (v16 or higher)
+- PostgreSQL
+- npm or yarn
+
+## ⚡ Quick Start
+
+### 1. Clone Repository
+```bash
+git clone https://github.com/radenmasabdul/nexora-api.git
+cd nexora-api
+```
+
+### 2. Install Dependencies
+```bash
+npm install
+```
+
+### 3. Setup Environment
+
+Create a `.env` file in the root directory:
+
+```env
+DATABASE_URL="your-database-url"
+JWT_SECRET="your-super-secret-jwt-key"
+PORT=your-port
+```
+
+### 4. Setup Database
+```bash
+# Generate Prisma client
+npx prisma generate
+
+# Run migrations
+npx prisma migrate deploy
+
+# (Optional) Seed the database
+npx prisma db seed
+```
+
+### 5. Start Development Server
+```bash
+npm run dev
+```
+
+The server will run at http://localhost:3000
+
+## 📁 Struktur Proyek
+
+```
+nexora-api/
+├── api/
+│   └── index.js         # Vercel API handler
+├── src/
+│   ├── controllers/     # Business logic controllers
+│   │   ├── auth/        # Authentication controllers
+│   │   ├── user/        # User management
+│   │   ├── team/        # Team management
+│   │   ├── member/      # Team member management
+│   │   ├── projects/    # Project management
+│   │   ├── task/        # Task management
+│   │   ├── comment/     # Comment system
+│   │   ├── activity/    # Activity logging
+│   │   └── notification/ # Notification system
+│   ├── middlewares/     # Custom middlewares
+│   │   ├── auth/        # Authentication & rate limiting
+│   │   └── role/        # Role-based access control
+│   ├── routes/          # API route definitions
+│   │   ├── auth/        # Authentication routes
+│   │   ├── user/        # User routes
+│   │   ├── team/        # Team routes
+│   │   ├── member/      # Member routes
+│   │   ├── projects/    # Project routes
+│   │   ├── task/        # Task routes
+│   │   ├── comments/    # Comment routes
+│   │   ├── activity/    # Activity routes
+│   │   ├── notification/ # Notification routes
+│   │   └── index.js     # Main router
+│   ├── utils/           # Utility functions
+│   │   ├── handlers/    # Async handlers
+│   │   ├── helpers/     # Helper functions
+│   │   └── validators/  # Request validators
+│   └── app.js           # Express app configuration
+├── prisma/
+│   ├── client/          # Prisma client
+│   ├── migrations/      # Database migrations
+│   └── schema.prisma    # Database schema
+├── tests/
+│   ├── unit/            # Unit tests
+│   └── integration/     # Integration tests
+├── index.js             # Application entry point
+├── prisma.config.ts     # Prisma configuration
+└── package.json         # Dependencies & scripts
+```
+
+## 🔗 API Endpoints
+
+### Authentication
+- `POST /auth/register` - Register a new user
+- `POST /auth/login` - Log in a user
+- `POST /auth/logout` - Log out a user
+
+### Users
+- `POST /users/create` - Create a new user
+- `GET /users/all` - Get all users
+- `GET /users/:id` - Get user by ID
+- `PUT /users/update/:id` - Update users
+- `DELETE /users/delete/:id` - Delete user
+
+### Teams
+- `POST /teams/create` - Create a new team
+- `GET /teams/all` - Get all teams
+- `GET /teams/:id` - Get team by ID
+- `PUT /teams/update/:id` - Update teams
+- `DELETE /teams/delete/:id` - Delete team
+
+### Team Members
+- `POST /members/create` - Add members to the team
+- `GET /members/all` - Get all members
+- `GET /members/:id` - Get members by ID
+- `PUT /members/update/:id` - Update member roles
+- `DELETE /members/delete/:id` - Remove member
+
+### Projects
+- `POST /projects/create` - Create a new project
+- `GET /projects/all` - Get all projects
+- `GET /projects/:id` - Get project by ID
+- `PUT /projects/update/:id` - Update project
+- `DELETE /projects/delete/:id` - Delete project
+
+### Tasks
+- `POST /tasks/create` - Create a new task
+- `GET /tasks/all` - Get all tasks
+- `GET /tasks/:id` - Get tasks by ID
+- `PUT /tasks/update/:id` - Update tasks
+- `DELETE /tasks/delete/:id` - Delete task
+
+### Comments
+- `POST /comments/create` - Add a new comment
+- `GET /comments/all` - Get all comments
+- `GET /comments/:id` - Get comments by ID
+- `PUT /comments/update/:id` - Update comments
+- `DELETE /comments/delete/:id` - Delete comment
+
+### Activity Logs
+- `POST /activities/create` - Add a new activity
+- `GET /activities/all` - Get all activity logs
+- `GET /activities/:id` - Get activity by ID
+- `DELETE /activities/delete/:id` - Delete activity
+
+### Notifications
+- `POST /notifications/create` - Add a new notifications
+- `GET /notifications/all` - Get all notifications
+- `GET /notifications/:id` - Get notifications by ID
+- `PATCH /notifications/:id` - Mark notification as read
+- `DELETE notifications/delete/:id` - Delete notifications
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
+```
+
+## 🔒 Security Features
+
+- **JWT Authentication**: Secure token-based authentication
+- **Password Hashing**: bcryptjs to hash passwords
+- **Rate Limiting**: Protection from brute force attacks
+- **CORS**: Cross-origin resource sharing configuration
+- **Helmet**: Security headers
+- **Input Validation**: Comprehensive request validation
+
+## 📊 Database Schema
+
+### Core Entities
+- **Users**: System users with role-based access
+- **Teams**: Teams/workgroups
+- **TeamMembers**: Many-to-many relationships between users and teams
+- **Projects**: Projects owned by a team
+- **Tasks**: Individual tasks within a project
+- **Comments**: Comments on tasks
+- **ActivityLog**: User activity log
+- **Notifications**: Notification system
+
+## 🚀 Deployments
+
+### Production Setup
+1. Set environment variables for production
+2. Build and optimize the application
+3. Set up the production database
+4. Configure reverse proxy (nginx)
+5. Set up SSL certificate
+
+### Environment Variables
+```env
+NODE_ENV=production
+DATABASE_URL=your_production_db_url
+JWT_SECRET=your_production_jwt_secret
+PORT=your-port
+```
+
+## 👨‍💻 Author
+
+**radenmasabdul**
+- GitHub: [@radenmasabdul](https://github.com/radenmasabdul)
+# 
+⭐ Don't forget to give a star if this project helps!
