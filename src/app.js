@@ -23,7 +23,23 @@ const limiter = rateLimit({
 app.use(limiter);
 app.use(helmet());
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
-app.use(cors());
+
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://nexora.vercel.app'
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+}));
+
 app.use(cookieParser());
 app.use(express.json());
 
