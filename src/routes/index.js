@@ -10,6 +10,7 @@ const taskRoutes = require("./task/taskRoutes");
 const commentRoutes = require("./comments/commentRoutes");
 const activityRoutes = require("./activity/activityRoutes");
 const notificationRoutes = require("./notification/notificationRoutes");
+const taskDashboardRoutes = require("./task/taskDashboardRoutes");
 
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
@@ -20,5 +21,6 @@ router.use("/tasks", taskRoutes);
 router.use("/comments", commentRoutes);
 router.use("/activities", activityRoutes);
 router.use("/notifications", notificationRoutes);
+router.use("/dashboard/tasks", taskDashboardRoutes);
 
 module.exports = router;
