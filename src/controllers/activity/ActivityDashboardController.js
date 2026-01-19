@@ -5,7 +5,7 @@ const getActivityCounts = asyncHandler(async (req, res) => {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
 
-    const activities = await prisma.activity.findMany({
+    const activities = await prisma.activityLog.findMany({
         where: {
             createdAt: {
                 gte: sevenDaysAgo
