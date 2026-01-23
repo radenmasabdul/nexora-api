@@ -57,6 +57,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     const search = req.query.search || '';
+    const role = req.query.role || null;
 
     const whereCondition = {
         ...(
