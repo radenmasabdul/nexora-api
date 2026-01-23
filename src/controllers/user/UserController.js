@@ -218,4 +218,27 @@ const deleteUser = asyncHandler(async (req, res) => {
     });
 });
 
-module.exports = { createUser, getAllUsers, getUserById, updateUser, deleteUser };
+const getRoleCounts = asyncHandler(async (req, res) => {
+    const roleCounts = await prisma.user.groupBy({
+        by: ['role'],
+        _count: {
+            role: true
+        },
+        orderBy: {
+            role: 'asc'
+        }
+    });
+
+    const formatted = roleCounts.reduce((acc,item) => {
+        acc[item.role] = item._count.role;
+        return acc;
+    }, {})
+
+    res.status(200).json({
+        success: true,
+        message: "Get role counts successfully",
+        data: formatted,
+    });
+})
+
+module.exports = { createUser, getAllUsers, getUserById, updateUser, deleteUser, getRoleCounts };
