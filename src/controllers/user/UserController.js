@@ -187,7 +187,7 @@ const updateUser = asyncHandler(async (req, res) => {
         const filePath = `users/user-${id}.${ext}`;
 
         const { error } = await supabase.storage
-            .from('avatars')
+            .from('nexora-avatars')
             .upload(filePath, req.file.buffer, {
                 contentType: req.file.mimetype,
                 upsert: true,
@@ -198,7 +198,7 @@ const updateUser = asyncHandler(async (req, res) => {
         }
 
         const { data } = supabase.storage
-            .from('avatars')
+            .from('nexora-avatars')
             .getPublicUrl(filePath);
 
         avatarUrl = data.publicUrl;
