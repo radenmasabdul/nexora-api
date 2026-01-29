@@ -1,5 +1,6 @@
 const prisma = require('../../../prisma/client');
 const asyncHandler = require('../../utils/handlers/asyncHandler');
+const supabase = require('../../utils/lib/supabase');
 const bcrypt = require('bcryptjs');
 const { validationResult } = require('express-validator');
 
@@ -148,7 +149,7 @@ const updateUser = asyncHandler(async (req, res) => {
         });
     };
 
-    const { name, email, password, role, avatar_url } = req.body;
+    const { name, email, password, role } = req.body;
     const validRoles = ['admin', 'manager', 'member'];
 
     if (role && !validRoles.includes(role)) {
@@ -179,13 +180,37 @@ const updateUser = asyncHandler(async (req, res) => {
 
     const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
 
+    let avatarUrl = existingUser.avatar_url;
+
+    if (req.file) {
+        const ext = req.file.originalname.split('.').pop();
+        const filePath = `users/user-${id}.${ext}`;
+
+        const { error } = await supabase.storage
+            .from('avatars')
+            .upload(filePath, req.file.buffer, {
+                contentType: req.file.mimetype,
+                upsert: true,
+            });
+
+        if (error) {
+            throw new Error(error.message);
+        }
+
+        const { data } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(filePath);
+
+        avatarUrl = data.publicUrl;
+    }
+
     const updatedUser = await prisma.user.update({
         where: { id },
         data: {
             name,
             email,
             role,
-            avatar_url: avatar_url || null,
+            avatar_url: avatarUrl,
             ...(hashedPassword && { password: hashedPassword }),
         },
     });
