@@ -184,13 +184,22 @@ const updateUser = asyncHandler(async (req, res) => {
 
     if (req.file) {
         const ext = req.file.originalname.split('.').pop();
-        const filePath = `users/user-${id}.${ext}`;
+        const filePath = `users/user-${id}-${Date.now()}.${ext}`;
+
+        if (existingUser.avatar_url) {
+            const oldPath = existingUser.avatar_url.split("/nexora-avatars/")[1];
+            if (oldPath) {
+                await supabase.storage
+                .from("nexora-avatars")
+                .remove([oldPath]);
+            }
+        }
 
         const { error } = await supabase.storage
             .from('nexora-avatars')
             .upload(filePath, req.file.buffer, {
                 contentType: req.file.mimetype,
-                upsert: true,
+                upsert: false,
             });
 
         if (error) {
