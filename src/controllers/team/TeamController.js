@@ -80,6 +80,9 @@ const getAllTeams = asyncHandler(async (req, res) => {
             createdBy: {
                 select: { id: true, name: true, email: true }
             },
+            _count: {
+                select: { members: true }
+            }
         },
     });
 
@@ -112,6 +115,17 @@ const getTeamsById = asyncHandler(async (req, res) => {
             createdBy: {
                 select: { id: true, name: true, email: true }
             },
+            members: {
+                include: {
+                    user: {
+                        select: { 
+                            id: true, 
+                            name: true, 
+                            email: true 
+                        }
+                    }
+                }
+            }
         },
     });
 
@@ -194,6 +208,7 @@ const deleteTeam = asyncHandler(async (req, res) => {
         });
     };
 
+    await prisma.teamMember.deleteMany({ where: { team_id: id } });
     await prisma.team.delete({ where: { id } });
 
     res.status(200).json({
