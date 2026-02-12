@@ -168,6 +168,7 @@ nexora-api/
 - `POST /teams/create` - Create a new team
 - `GET /teams/all` - Get all teams
 - `GET /teams/:id` - Get team by ID
+- `GET /teams/:id/members` - Get member by Team
 - `PUT /teams/update/:id` - Update teams
 - `DELETE /teams/delete/:id` - Delete team
 
