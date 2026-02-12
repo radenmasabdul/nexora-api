@@ -217,4 +217,29 @@ const deleteTeam = asyncHandler(async (req, res) => {
     });
 });
 
-module.exports = { createTeam, getAllTeams, getTeamsById, updateTeam, deleteTeam };
+const getTeamMembers = asyncHandler(async (req, res) => {
+    const { id: teamId } = req.params;
+
+    const members = await prisma.teamMember.findMany({
+        where: { team_id: teamId },
+        orderBy: { joined_at: 'asc' },
+        include: {
+            user: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    avatar_url: true,
+                },
+            },
+        },
+    });
+
+    res.status(200).json({
+        success: true,
+        message: "Team members retrieved successfully",
+        data: members,
+    });
+});
+
+module.exports = { createTeam, getAllTeams, getTeamsById, updateTeam, deleteTeam, getTeamMembers };
