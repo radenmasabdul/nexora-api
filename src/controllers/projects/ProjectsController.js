@@ -94,7 +94,7 @@ const getAllProjects = asyncHandler(async (req, res) => {
         orderBy: { created_at: 'asc' },
         include: {
             team: {
-                select: { id: true, name: true, description: true, status: true }
+                select: { id: true, name: true, description: true }
             },
         },
     });
@@ -121,7 +121,7 @@ const getProjectById = asyncHandler(async (req, res) => {
         where: { id },
         include: {
             team: {
-                select: { id: true, name: true, description: true, status: true }
+                select: { id: true, name: true, description: true }
             },
         },
     });
@@ -198,7 +198,7 @@ const updateProject = asyncHandler(async (req, res) => {
         },
         include: {
             team: {
-                select: { id: true, name: true, description: true, status: true }
+                select: { id: true, name: true, description: true }
             },
         },
     });
