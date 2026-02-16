@@ -14,6 +14,14 @@ const createProject = asyncHandler(async (req, res) => {
     }
 
     const { team_id, name, description, status, deadline } = req.body;
+    const validStatusProject = ['active', 'on_hold', 'completed'];
+
+    if(status && !validStatusProject.includes(status)) {
+        return res.status(400).json({
+            success: false,
+            message: 'Invalid status value. Allowed statuses: active, on_hold, completed.',
+        })
+    };
 
     const existingProject = await prisma.projects.findFirst({
         where: {
@@ -61,15 +69,21 @@ const getAllProjects = asyncHandler(async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     const search = req.query.search || '';
+    const status = req.query.status || null;
 
-    const whereCondition = search
-        ? {
-            OR: [
-                { name: { contains: search, mode: 'insensitive' } },
-                { description: { contains: search, mode: 'insensitive' } },
-            ],
-        }
-        : {};
+    const whereCondition = {
+        ...(
+            search
+            ? {
+                OR: [
+                    { name: { contains: search, mode: 'insensitive' } },
+                    { description: { contains: search, mode: 'insensitive' } },
+                ],
+            }
+            : {}
+        ),
+        ...(status ? { status } : {}),
+    };
 
     const totalData = await prisma.projects.count({ where: whereCondition });
 
@@ -80,7 +94,7 @@ const getAllProjects = asyncHandler(async (req, res) => {
         orderBy: { created_at: 'asc' },
         include: {
             team: {
-                select: { id: true, name: true, description: true }
+                select: { id: true, name: true, description: true, status: true }
             },
         },
     });
@@ -107,7 +121,7 @@ const getProjectById = asyncHandler(async (req, res) => {
         where: { id },
         include: {
             team: {
-                select: { id: true, name: true, description: true }
+                select: { id: true, name: true, description: true, status: true }
             },
         },
     });
@@ -139,6 +153,14 @@ const updateProject = asyncHandler(async (req, res) => {
     };
 
     const { team_id, name, description, status, deadline } = req.body;
+    const validStatusProject = ['active', 'on_hold', 'completed'];
+
+    if(status && !validStatusProject.includes(status)) {
+        return res.status(400).json({
+            success: false,
+            message: 'Invalid status value. Allowed statuses: active, on_hold, completed.',
+        })
+    };
 
     const currentProject = await prisma.projects.findUnique({ where: { id } });
     if (!currentProject) {
@@ -146,7 +168,7 @@ const updateProject = asyncHandler(async (req, res) => {
             success: false,
             message: 'Project not found.',
         });
-    }
+    };
 
     const existingProject = await prisma.projects.findFirst({
         where: { 
@@ -157,6 +179,7 @@ const updateProject = asyncHandler(async (req, res) => {
             ]
         }
     });
+
     if (existingProject && existingProject.id !== id) {
         return res.status(409).json({
             success: false,
@@ -175,7 +198,7 @@ const updateProject = asyncHandler(async (req, res) => {
         },
         include: {
             team: {
-                select: { id: true, name: true, description: true }
+                select: { id: true, name: true, description: true, status: true }
             },
         },
     });
