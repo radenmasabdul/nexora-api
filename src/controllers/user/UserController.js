@@ -15,12 +15,12 @@ const createUser = asyncHandler(async (req, res) => {
     }
 
     const { name, email, password, role, avatar_url } = req.body;
-    const validRoles = ['admin', 'manager', 'member'];
+    const validRoles = ['administrator', 'manager_division', 'project_owner', 'staff'];
 
     if (role && !validRoles.includes(role)) {
         return res.status(400).json({
             success: false,
-            message: 'Invalid role value. Allowed roles: admin, manager, member.',
+            message: 'Invalid role value. Allowed roles: administrator, manager_division, project_owner, staff.',
         });
     };
 
@@ -150,12 +150,12 @@ const updateUser = asyncHandler(async (req, res) => {
     };
 
     const { name, email, password, role } = req.body;
-    const validRoles = ['admin', 'manager', 'member'];
+    const validRoles = ['administrator', 'manager_division', 'project_owner', 'staff'];
 
     if (role && !validRoles.includes(role)) {
         return res.status(400).json({
             success: false,
-            message: 'Invalid role value. Allowed roles: admin, manager, member.',
+            message: 'Invalid role value. Allowed roles: administrator, manager_division, project_owner, staff.',
         });
     };
 
