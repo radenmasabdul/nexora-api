@@ -31,7 +31,7 @@ const validateRegister = [
     body('role')
         .trim()
         .notEmpty().withMessage('Role is required')
-        .isIn(['admin', 'manager', 'member']).withMessage('Role must be either admin, manager, or member'),
+        .isIn(['administrator', 'manager_division', 'project_owner', 'staff']).withMessage('Role must be either administrator, manager_division, project_owner, or staff'),
 ]
 
 const validateLogin = [

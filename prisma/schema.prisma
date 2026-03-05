@@ -7,12 +7,52 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  administrator
+  manager_division
+  project_owner
+  staff
+}
+
+enum TeamMemberRole {
+  project_owner
+  team_leader
+  developer
+}
+
+enum ProjectStatus {
+  planning
+  in_progress
+  on_hold
+  completed
+}
+
+enum TaskPriority {
+  low
+  medium
+  high
+}
+
+enum TaskStatus {
+  to_do
+  in_progress
+  review
+  done
+}
+
+enum EntityType {
+  task
+  project
+  team
+  comment
+}
+
 model User {
   id                String        @id @default(uuid())
   name              String        @db.VarChar(255)
   email             String        @unique @db.VarChar(255)
   password          String        @db.VarChar(255)
-  role              String        @db.VarChar(50)
+  role              UserRole
   avatar_url        String?       @db.VarChar(255)
   created_at        DateTime      @default(now())
   updated_at        DateTime      @updatedAt
@@ -20,9 +60,12 @@ model User {
   createdTeams      Team[]        @relation("UserCreatedTeams")
   teamMemberships   TeamMember[]
   assignedTasks     Task[]        @relation("UserAssignedTasks")
-  comments          Comments[]
+  comments          Comment[]
   activityLogs      ActivityLog[]
   notifications     Notification[]
+
+  projectsCreated   Project[]     @relation("UserCreatedProjects")
+  tasksCreated      Task[]        @relation("UserCreatedTasks")
 }
 
 model Team {
@@ -33,66 +76,82 @@ model Team {
   updated_at        DateTime      @updatedAt
   created_by_id     String
 
-  createdBy         User          @relation("UserCreatedTeams", fields: [created_by_id], references: [id])
+  createdBy         User          @relation("UserCreatedTeams", fields: [created_by_id], references: [id], onDelete: Cascade)
   members           TeamMember[]
-  projects          Projects[]
+  projects          Project[]
 }
 
 model TeamMember {
   id                String        @id @default(uuid())
   team_id           String
   user_id           String
-  role              String        @db.VarChar(50)
+  role              TeamMemberRole
   joined_at         DateTime      @default(now())
 
-  team              Team          @relation(fields: [team_id], references: [id])
-  user              User          @relation(fields: [user_id], references: [id])
+  team              Team          @relation(fields: [team_id], references: [id], onDelete: Cascade)
+  user              User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([team_id, user_id])
 }
 
-model Projects {
+model Project {
   id                String        @id @default(uuid())
   team_id           String
   name              String        @db.VarChar(255)
   description       String?       @db.Text
-  status            String        @db.VarChar(50)
+  status            ProjectStatus
   deadline          DateTime
+  created_by        String
   created_at        DateTime      @default(now())
+  updated_at        DateTime      @default(now()) @updatedAt
 
-  team              Team          @relation(fields: [team_id], references: [id])
+  team              Team          @relation(fields: [team_id], references: [id], onDelete: Cascade)
+  createdBy         User          @relation("UserCreatedProjects", fields: [created_by], references: [id], onDelete: Cascade)
   tasks             Task[]
 
   @@unique([team_id, name])
+  @@index([status])
+  @@index([deadline])
+  @@index([created_by])
 }
 
 model Task {
   id                String        @id @default(uuid())
   project_id        String
-  assign_to         String
+  assign_to         String?
   title             String        @db.VarChar(255)
   description       String?       @db.Text
-  priority          String        @db.VarChar(50)
-  status            String        @db.VarChar(50)
+  priority          TaskPriority
+  status            TaskStatus
   due_date          DateTime
   created_at        DateTime      @default(now())
   updated_at        DateTime      @updatedAt
+  created_by        String
 
-  project           Projects      @relation(fields: [project_id], references: [id])
-  assignedUser      User          @relation("UserAssignedTasks", fields: [assign_to], references: [id])
+  project           Project       @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  assignedUser      User?         @relation("UserAssignedTasks", fields: [assign_to], references: [id])
+  createdBy         User          @relation("UserCreatedTasks", fields: [created_by], references: [id], onDelete: Cascade)
+  comment           Comment[]
 
-  comment           Comments[]
+  @@index([project_id])
+  @@index([assign_to])
+  @@index([status])
+  @@index([due_date])
+  @@index([created_by])
 }
 
-model Comments {
+model Comment {
   id                String        @id @default(uuid())
   task_id           String
   user_id           String
   content           String        @db.Text
   created_at        DateTime      @default(now())
 
-  task              Task          @relation(fields: [task_id], references: [id])
-  user              User          @relation(fields: [user_id], references: [id])
+  task              Task          @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user              User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([task_id])
+  @@index([user_id])
 }
 
 model ActivityLog {
@@ -100,10 +159,14 @@ model ActivityLog {
   user_id           String
   action            String        @db.VarChar(225)
   entity_id         String
-  entity_type       String        @db.VarChar(50)
+  entity_type       EntityType
   created_at        DateTime      @default(now())
 
-  user              User          @relation(fields: [user_id], references: [id])
+  user              User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([entity_type])
+  @@index([entity_id])
 }
 
 model Notification {
@@ -113,5 +176,8 @@ model Notification {
   is_read           Boolean       @default(false)
   created_at        DateTime      @default(now())
 
-  user              User          @relation(fields: [user_id], references: [id])
+  user              User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([is_read])
 }
