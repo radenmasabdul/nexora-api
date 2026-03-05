@@ -16,8 +16,8 @@ const validateCreateActivity = [
   body('entity_type')
     .notEmpty()
     .withMessage('Entity type is required')
-    .isIn(['task', 'project', 'team', 'comment', 'user'])
-    .withMessage('Entity type must be one of: task, project, team, comment, user'),
+    .isIn(['task', 'project', 'team', 'comment'])
+    .withMessage('Entity type must be one of: task, project, team, comment'),
   
   body('entity_id')
     .notEmpty()

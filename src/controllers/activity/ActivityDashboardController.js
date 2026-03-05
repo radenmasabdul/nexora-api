@@ -6,6 +6,7 @@ const getActivityCounts = asyncHandler(async (req, res) => {
 
     const today = new Date();
     let startDate = new Date();
+    let endDate = null;
     const periods = [];
 
     switch (range) {
@@ -32,11 +33,11 @@ const getActivityCounts = asyncHandler(async (req, res) => {
             }
             break;
         case 'year':
-            startDate.setFullYear(today.getFullYear() - 1);
+            startDate = new Date(today.getFullYear(), 0, 1);
+            endDate = new Date(today.getFullYear(), 11, 31, 23, 59, 59);
 
             for (let i = 0; i < 12; i++) {
-                const month = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
-                periods.push(month.toISOString().split('T')[0].slice(0, 7));
+                periods.push(`${today.getFullYear()}-${String(i + 1).padStart(2, '0')}`);
             }
             break;
         default:
@@ -46,7 +47,8 @@ const getActivityCounts = asyncHandler(async (req, res) => {
     const activities = await prisma.activityLog.findMany({
         where: {
             created_at: {
-                gte: startDate
+                gte: startDate,
+                ...(range === 'year' && { lte: endDate })
             }
         },
         select: {
