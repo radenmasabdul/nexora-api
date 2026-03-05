@@ -20,7 +20,7 @@ const register = asyncHandler(async (req, res) => {
             name: req.body.name,
             email: req.body.email,
             password: hashPassword,
-            role: req.body.role || 'ADMIN',
+            role: req.body.role || "staff",
         },
     });
 
