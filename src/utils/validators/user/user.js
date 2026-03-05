@@ -21,8 +21,8 @@ const validateCreateUser = [
 
     body('role')
         .optional()
-        .isIn(['admin', 'manager', 'member'])
-        .withMessage('Invalid role value. Allowed roles: admin, manager, member.'),
+        .isIn(['administrator', 'manager_division', 'project_owner', 'staff'])
+        .withMessage('Invalid role value. Allowed roles: administrator, manager_division, project_owner, staff.'),
 ];
 
 const validateUpdateUser = [
@@ -48,8 +48,8 @@ const validateUpdateUser = [
 
     body('role')
         .optional()
-        .isIn(['admin', 'manager', 'member'])
-        .withMessage('Invalid role value. Allowed roles: admin, manager, member.'),
+        .isIn(['administrator', 'manager_division', 'project_owner', 'staff'])
+        .withMessage('Invalid role value. Allowed roles: administrator, manager_division, project_owner, staff.'),
 ];
 
 module.exports = { validateCreateUser, validateUpdateUser };
