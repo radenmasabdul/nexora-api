@@ -58,7 +58,7 @@ const notifyNewComment = async (taskId, commenterId) => {
 
 // notification ketika project baru dibuat
 const notifyNewProject = async (projectId, creatorId) => {
-  const project = await prisma.projects.findUnique({
+  const project = await prisma.project.findUnique({
     where: { id: projectId },
     include: {
       team: {
@@ -123,7 +123,7 @@ const notifyTaskStatusChange = async (taskId, newStatus, updaterName) => {
 
 // notification ketika deadline project mendekat
 const notifyProjectDeadline = async (projectId) => {
-  const project = await prisma.projects.findUnique({
+  const project = await prisma.project.findUnique({
     where: { id: projectId },
     include: {
       team: {
@@ -172,7 +172,7 @@ const notifyTaskDeletion = async (taskTitle, assignedUserId, deleterName) => {
 
 // notification ketika status project berubah
 const notifyProjectStatusChange = async (projectId, newStatus, updaterName) => {
-  const project = await prisma.projects.findUnique({
+  const project = await prisma.project.findUnique({
     where: { id: projectId },
     include: {
       team: {
