@@ -23,7 +23,7 @@ const validateCreateTask = [
 
     body('status')
         .notEmpty().withMessage('Status is required')
-        .isIn(['todo', 'in_progress', 'done']).withMessage('Status must be one of: todo, in_progress, done'),
+        .isIn(['to_do', 'in_progress', 'review', 'done']).withMessage('Status must be one of: to_do, in_progress, review, done'),
 
     body('due_date')
         .notEmpty().withMessage('Due Date is required')
@@ -53,7 +53,7 @@ const validateUpdateTask = [
 
     body('status')
         .optional()
-        .isIn(['todo', 'in_progress', 'done']).withMessage('Status must be one of: todo, in_progress, done'),
+        .isIn(['to_do', 'in_progress', 'review', 'done']).withMessage('Status must be one of: to_do, in_progress, review, done'),
 
     body('due_date')
         .optional()
