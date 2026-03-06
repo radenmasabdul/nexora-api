@@ -1,7 +1,8 @@
 const prisma = require('../../../prisma/client/index.js');
 const asyncHandler = require('../../utils/handlers/asyncHandler');
 const { validationResult } = require('express-validator');
-const { notifyTeamCreation } = require('../../utils/helpers/notificationHelper');
+const { notifyTeamCreation, notifyTeamDeletion } = require('../../utils/helpers/notificationHelper');
+const { logActivity } = require('../activity/ActivityLogController.js');
 
 const createTeam = asyncHandler(async (req, res) => {
     const errors = validationResult(req);
@@ -17,6 +18,7 @@ const createTeam = asyncHandler(async (req, res) => {
     const creatorId = req.user.id;
 
     const existingTeam = await prisma.team.findUnique({ where: { name } });
+
     if (existingTeam) {
         return res.status(409).json({
             success: false,
@@ -28,19 +30,21 @@ const createTeam = asyncHandler(async (req, res) => {
         data: {
             name,
             description,
-            createdBy:{
-                connect: { id: creatorId }
-            },
+            createdBy: { connect: { id: creatorId } },
         },
         include: {
-            createdBy: {
-                select: { id: true, name: true, email: true }
-            },
+            createdBy: { select: { id: true, name: true, email: true } },
         },
     });
 
-    // send notification to admins about new team creation
     await notifyTeamCreation(newTeam.id, creatorId);
+
+    await logActivity({
+        user_id: req.user.id,
+        action: 'team_created',
+        entity_type: 'team',
+        entity_id: newTeam.id,
+    });
 
     res.status(201).json({
         success: true,
@@ -64,32 +68,24 @@ const getAllTeams = asyncHandler(async (req, res) => {
         }
         : {};
 
-    const totalData = await prisma.team.count({ where: whereCondition });
-
-    const teams = await prisma.team.findMany({
-        where: whereCondition,
-        skip,
-        take: limit,
-        orderBy: { created_at: 'asc' },
-        select:{
-            id: true,
-            name: true,
-            description: true,
-            created_at: true,
-            updated_at: true,
-            createdBy: {
-                select: { id: true, name: true, email: true }
+    const [totalData, teams] = await Promise.all([
+        prisma.team.count({ where: whereCondition }),
+        prisma.team.findMany({
+            where: whereCondition,
+            skip,
+            take: limit,
+            orderBy: { created_at: 'asc' },
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                created_at: true,
+                updated_at: true,
+                createdBy: { select: { id: true, name: true, email: true } },
+                _count: { select: { members: true } }
             },
-            _count: {
-                select: { members: true }
-            }
-        },
-    });
-
-    const teamsWithNumber = teams.map((team, index) => ({
-        no: skip + index + 1,
-        ...team,
-    }));
+        })
+    ]);
 
     res.status(200).json({
         success: true,
@@ -97,7 +93,7 @@ const getAllTeams = asyncHandler(async (req, res) => {
         currentPage: page,
         totalData,
         totalPages: Math.ceil(totalData / limit),
-        data: teamsWithNumber,
+        data: teams.map((team, index) => ({ no: skip + index + 1, ...team })),
     });
 });
 
@@ -112,18 +108,10 @@ const getTeamsById = asyncHandler(async (req, res) => {
             description: true,
             created_at: true,
             updated_at: true,
-            createdBy: {
-                select: { id: true, name: true, email: true }
-            },
+            createdBy: { select: { id: true, name: true, email: true } },
             members: {
                 include: {
-                    user: {
-                        select: { 
-                            id: true, 
-                            name: true, 
-                            email: true 
-                        }
-                    }
+                    user: { select: { id: true, name: true, email: true } }
                 }
             }
         },
@@ -158,6 +146,7 @@ const updateTeam = asyncHandler(async (req, res) => {
     const { name, description } = req.body;
 
     const existingTeam = await prisma.team.findUnique({ where: { id } });
+
     if (!existingTeam) {
         return res.status(404).json({
             success: false,
@@ -177,17 +166,25 @@ const updateTeam = asyncHandler(async (req, res) => {
 
     const updatedTeam = await prisma.team.update({
         where: { id },
-        data: { name, description },
+        data: {
+            ...(name && { name }),
+            ...(description !== undefined && { description }),
+        },
         select:{
             id: true,
             name: true,
             description: true,
             created_at: true,
             updated_at: true,
-            createdBy: {
-                select: { id: true, name: true, email: true }
-            },
+            createdBy: { select: { id: true, name: true, email: true } },
         },
+    });
+
+    await logActivity({
+        user_id: req.user.id,
+        action: 'team_updated',
+        entity_type: 'team',
+        entity_id: updatedTeam.id,
     });
 
     res.status(200).json({
@@ -208,6 +205,15 @@ const deleteTeam = asyncHandler(async (req, res) => {
         });
     };
 
+    await notifyTeamDeletion(id, req.user?.name || 'System');
+
+    await logActivity({
+        user_id: req.user.id,
+        action: 'team_deleted',
+        entity_type: 'team',
+        entity_id: existingTeam.id,
+    });
+
     await prisma.teamMember.deleteMany({ where: { team_id: id } });
     await prisma.team.delete({ where: { id } });
 
@@ -225,12 +231,7 @@ const getTeamMembers = asyncHandler(async (req, res) => {
         orderBy: { joined_at: 'asc' },
         include: {
             user: {
-                select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                    avatar_url: true,
-                },
+                select: { id: true, name: true, email: true, avatar_url: true },
             },
         },
     });

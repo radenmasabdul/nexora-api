@@ -26,30 +26,49 @@ const validateCreateUser = [
 ];
 
 const validateUpdateUser = [
-    body('name')
-        .optional()
-        .trim()
-        .notEmpty().withMessage('Name cannot be empty')
-        .isLength({ max: 25 }).withMessage('Name must not exceed 25 characters'),
+  body("name")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("Name cannot be empty")
+    .isLength({ max: 25 })
+    .withMessage("Name must not exceed 25 characters"),
 
-    body('email')
-        .optional()
-        .trim()
-        .notEmpty().withMessage('Email cannot be empty')
-        .isEmail().withMessage('Email is invalid'),
+  body("email")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("Email cannot be empty")
+    .isEmail()
+    .withMessage("Email is invalid"),
 
-    body('password')
-        .optional()
-        .isLength({ min: 8 }).withMessage('Password must be at least 8 characters long')
-        .matches(/[A-Z]/).withMessage('Password must contain at least one uppercase letter')
-        .matches(/[a-z]/).withMessage('Password must contain at least one lowercase letter')
-        .matches(/[0-9]/).withMessage('Password must contain at least one number')
-        .matches(/[\W_]/).withMessage('Password must contain at least one special character'),
+  body("password")
+    .optional()
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters long")
+    .matches(/[A-Z]/)
+    .withMessage("Password must contain at least one uppercase letter")
+    .matches(/[a-z]/)
+    .withMessage("Password must contain at least one lowercase letter")
+    .matches(/[0-9]/)
+    .withMessage("Password must contain at least one number")
+    .matches(/[\W_]/)
+    .withMessage("Password must contain at least one special character"),
 
-    body('role')
-        .optional()
-        .isIn(['administrator', 'manager_division', 'project_owner', 'staff'])
-        .withMessage('Invalid role value. Allowed roles: administrator, manager_division, project_owner, staff.'),
+  body("role")
+    .optional()
+    .isIn(["administrator", "manager_division", "project_owner", "staff"])
+    .withMessage(
+      "Invalid role value. Allowed roles: administrator, manager_division, project_owner, staff.",
+    ),
+
+  body().custom((value, { req }) => {
+    const { name, email, password, role } = req.body;
+    if (!name && !email && !password && !role && !req.file) {
+      throw new Error("At least one field must be provided for update");
+    }
+    return true;
+  }),
 ];
 
 module.exports = { validateCreateUser, validateUpdateUser };

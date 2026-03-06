@@ -5,10 +5,10 @@ const { createProject, getAllProjects, getProjectById, updateProject, deleteProj
 const { validateCreateProject, validateUpdateProject } = require('../../utils/validators/projects/projects');
 const verifyToken = require('../../middlewares/auth/auth');
 
-router.get('/all', verifyToken, getAllProjects);
+router.get('/', verifyToken, getAllProjects);
 router.get('/:id', verifyToken, getProjectById);
-router.post('/create', verifyToken, validateCreateProject, createProject);
-router.put('/update/:id', verifyToken, validateUpdateProject, updateProject);
-router.delete('/delete/:id', verifyToken, deleteProject);
+router.post('/', verifyToken, validateCreateProject, createProject);
+router.patch('/:id', verifyToken, validateUpdateProject, updateProject);
+router.delete('/:id', verifyToken, deleteProject);
 
 module.exports = router;

@@ -2,6 +2,7 @@ const prisma = require('../../../prisma/client/index.js');
 const asyncHandler = require('../../utils/handlers/asyncHandler.js');
 const { validationResult } = require('express-validator');
 const { notifyTeamJoin, notifyRoleChange, notifyMemberRemoval } = require('../../utils/helpers/notificationHelper');
+const { logActivity } = require('../activity/ActivityLogController.js');
 
 const createMember = asyncHandler(async (req, res) => {
     const errors = validationResult(req);
@@ -15,7 +16,37 @@ const createMember = asyncHandler(async (req, res) => {
     
     const { team_id, user_id, role } = req.body;
 
-    const existingMember = await prisma.teamMember.findUnique({ where: { team_id_user_id: { team_id, user_id } } });
+    const validRoles = ['project_owner', 'team_leader', 'developer'];
+
+    if (role && !validRoles.includes(role)) {
+        return res.status(400).json({
+            success: false,
+            message: 'Invalid role. Allowed: project_owner, team_leader, developer.',
+        });
+    }
+
+    const team = await prisma.team.findUnique({ where: { id: team_id } });
+
+    if (!team) {
+        return res.status(404).json({
+            success: false,
+            message: 'Team not found.',
+        });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: user_id } });
+
+    if (!user) {
+        return res.status(404).json({
+            success: false,
+            message: 'User not found.',
+        });
+    }
+
+    const existingMember = await prisma.teamMember.findUnique({ 
+        where: { team_id_user_id: { team_id, user_id } }
+    });
+
     if (existingMember) {
         return res.status(409).json({
             success: false,
@@ -30,17 +61,19 @@ const createMember = asyncHandler(async (req, res) => {
             role,
         },
         include: {
-            team: {
-                select: { id: true, name: true, description: true }
-            },
-            user: {
-                select: { id: true, name: true, email: true }
-            },
+            team: { select: { id: true, name: true, description: true } },
+            user: { select: { id: true, name: true, email: true } },
         },
     });
 
-    // send welcome notification to new member
     await notifyTeamJoin(team_id, user_id);
+
+    await logActivity({
+        user_id: req.user.id,
+        action: 'team_joined',
+        entity_type: 'team',
+        entity_id: team_id,
+    });
 
     res.status(201).json({
         success: true,
@@ -54,30 +87,28 @@ const getAllMembers = asyncHandler(async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     const search = req.query.search || '';
+    const team_id = req.query.team_id || null;
 
-    const whereCondition = search ? { role: { contains: search, mode: 'insensitive'} } : {};
+    const whereCondition = {
+        ...(team_id ? { team_id } : {}),
+        ...(search ? {
+            user: { name: { contains: search, mode: 'insensitive' } }
+        } : {}),
+    };
 
-    const totalData = await prisma.teamMember.count({ where: whereCondition });
-
-    const members = await prisma.teamMember.findMany({
-        where: whereCondition,
-        skip,
-        take: limit,
-        orderBy: { joined_at: 'asc' },
-        include: {
-            team: {
-                select: { id: true, name: true, description: true }
+    const [totalData, members] = await Promise.all([
+        prisma.teamMember.count({ where: whereCondition }),
+        prisma.teamMember.findMany({
+            where: whereCondition,
+            skip,
+            take: limit,
+            orderBy: { joined_at: 'asc' },
+            include: {
+                team: { select: { id: true, name: true, description: true } },
+                user: { select: { id: true, name: true, email: true } },
             },
-            user: {
-                select: { id: true, name: true, email: true }
-            },
-        },
-    });
-
-    const membersWithNumber = members.map((member, index) => ({
-        no: skip + index + 1,
-        ...member,
-    }));
+        })
+    ]);
 
     res.status(200).json({
         success: true,
@@ -85,7 +116,7 @@ const getAllMembers = asyncHandler(async (req, res) => {
         currentPage: page,
         totalData,
         totalPages: Math.ceil(totalData / limit),
-        data: membersWithNumber,
+        data: members.map((member, index) => ({ no: skip + index + 1, ...member })),
     });
 });
 
@@ -95,12 +126,8 @@ const getMemberById = asyncHandler(async (req, res) => {
     const member = await prisma.teamMember.findUnique({
         where: { id },
         include: {
-            team: {
-                select: { id: true, name: true, description: true }
-            },
-            user: {
-                select: { id: true, name: true, email: true }
-            },
+            team: { select: { id: true, name: true, description: true } },
+            user: { select: { id: true, name: true, email: true } },
         },
     });
 
@@ -132,7 +159,17 @@ const updateMember = asyncHandler(async (req, res) => {
 
     const { role } = req.body;
 
+    const validRoles = ['project_owner', 'team_leader', 'developer'];
+
+    if (role && !validRoles.includes(role)) {
+        return res.status(400).json({
+            success: false,
+            message: 'Invalid role. Allowed: project_owner, team_leader, developer.',
+        });
+    }
+
     const existingMember = await prisma.teamMember.findUnique({ where: { id } });
+
     if (!existingMember) {
         return res.status(404).json({
             success: false,
@@ -144,19 +181,26 @@ const updateMember = asyncHandler(async (req, res) => {
         where: { id },
         data: { role },
         include: {
-            team: {
-                select: { id: true, name: true, description: true }
-            },
-            user: {
-                select: { id: true, name: true, email: true }
-            },
+            team: { select: { id: true, name: true, description: true } },
+            user: { select: { id: true, name: true, email: true } },
         },
     });
 
-    // send notification if role changed
-    if (role !== existingMember.role) {
-        await notifyRoleChange(existingMember.team_id, existingMember.user_id, role, req.user?.name || 'System');
+    if (role && role !== existingMember.role) {
+        await notifyRoleChange(
+            existingMember.team_id,
+            existingMember.user_id,
+            role,
+            req.user?.name || 'System'
+        );
     }
+
+    await logActivity({
+        user_id: req.user.id,
+        action: 'team_updated',
+        entity_type: 'team',
+        entity_id: existingMember.team_id,
+    });
 
     res.status(200).json({
         success: true,
@@ -169,6 +213,7 @@ const deleteMember = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
     const existingMember = await prisma.teamMember.findUnique({ where: { id } });
+
     if (!existingMember) {
         return res.status(404).json({
             success: false,
@@ -176,8 +221,18 @@ const deleteMember = asyncHandler(async (req, res) => {
         });
     };
 
-    // send notification before removal
-    await notifyMemberRemoval(existingMember.team_id, existingMember.user_id, req.user?.name || 'System');
+    await notifyMemberRemoval(
+        existingMember.team_id,
+        existingMember.user_id,
+        req.user?.name || 'System'
+    );
+
+    await logActivity({
+        user_id: req.user.id,
+        action: 'team_left',
+        entity_type: 'team',
+        entity_id: existingMember.team_id,
+    });
 
     await prisma.teamMember.delete({ where: { id } });
 

@@ -45,7 +45,7 @@ const getTaskWorkloadStats = asyncHandler(async (req, res) => {
                     assignedTasks: {
                         where: {
                             status: {
-                                in: ['todo', 'in_progress'],
+                                in: ['to_do', 'in_progress'],
                             }
                         }
                     }

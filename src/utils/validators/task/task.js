@@ -6,7 +6,7 @@ const validateCreateTask = [
         .isUUID().withMessage('Project ID must be a valid UUID'),
 
     body('assign_to')
-        .notEmpty().withMessage('Assign To is required')
+        .optional()
         .isUUID().withMessage('Assign To must be a valid UUID'),
     
     body('title')
@@ -58,6 +58,14 @@ const validateUpdateTask = [
     body('due_date')
         .optional()
         .isISO8601().withMessage('Due Date must be a valid date'),
+
+    body().custom((value, { req }) => {
+        const { project_id, assign_to, title, description, priority, status, due_date } = req.body;
+        if (!project_id && !assign_to && !title && !description && !priority && !status && !due_date) {
+            throw new Error('At least one field must be provided for update');
+        }
+        return true;
+    }),
 ];
 
 module.exports = { validateCreateTask, validateUpdateTask };

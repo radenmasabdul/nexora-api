@@ -2,6 +2,7 @@ const prisma = require('../../../prisma/client/index.js');
 const asyncHandler = require('../../utils/handlers/asyncHandler.js');
 const { validationResult } = require('express-validator');
 const { notifyNewComment, notifyCommentDeletion } = require('../../utils/helpers/notificationHelper');
+const { logActivity } = require('../activity/ActivityLogController.js');
 
 const createComment = asyncHandler(async (req, res) => {
     const errors = validationResult(req);
@@ -13,11 +14,20 @@ const createComment = asyncHandler(async (req, res) => {
         });
     }
     
-    const { user_id, task_id, content } = req.body;
+    const { task_id, content } = req.body;
+    const user_id = req.user.id;
 
     const task = await prisma.task.findUnique({
         where: { id: task_id },
-        include: { project: { include: { team: { include: { members: true } } } } }
+        include: { 
+            project: { 
+                include: { 
+                    team: { 
+                        include: { members: true } 
+                    }
+                }
+            }
+        }
     });
     
     if (!task) {
@@ -27,7 +37,11 @@ const createComment = asyncHandler(async (req, res) => {
         });
     }
 
-    const hasAccess = task.project.team.members.some(member => member.user_id === user_id);
+    const hasAccess =
+        task.project.team.members.some(member => member.user_id === user_id) ||
+        task.assign_to === user_id ||
+        task.created_by === user_id;
+
     if (!hasAccess) {
         return res.status(403).json({
             success: false,
@@ -42,17 +56,19 @@ const createComment = asyncHandler(async (req, res) => {
             content,
         },
         include: {
-            user: {
-                select: { id: true, name: true, email: true }
-            },
-            task: {
-                select: { id: true, title: true, description: true }
-            },
+            user: { select: { id: true, name: true, email: true } },
+            task: { select: { id: true, title: true, description: true } },
         },
     });
 
-    // send notification for new comment
     await notifyNewComment(task_id, user_id);
+
+    await logActivity({
+        user_id: req.user.id,
+        action: 'comment_added',
+        entity_type: 'comment',
+        entity_id: newComment.id,
+    });
 
     res.status(201).json({
         success: true,
@@ -66,31 +82,28 @@ const getAllComment = asyncHandler(async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     const search = req.query.search || '';
+    const task_id = req.query.task_id || null;
 
     const sanitizedSearch = search.replace(/[%_]/g, '\\$&');
-    const whereCondition = search ? { content: { contains: sanitizedSearch, mode: 'insensitive'} } : {};
     
-    const totalData = await prisma.comment.count({ where: whereCondition });
-
-    const comments = await prisma.comment.findMany({
-        where: whereCondition,
-        skip,
-        take: limit,
-        orderBy: { created_at: 'desc' },
-        include: {
-            user: {
-                select: { id: true, name: true, email: true }
+    const whereCondition = {
+        ...(task_id ? { task_id } : {}),
+        ...(search ? { content: { contains: sanitizedSearch, mode: 'insensitive' } } : {}),
+    };
+    
+    const [totalData, comments] = await Promise.all([
+        prisma.comment.count({ where: whereCondition }),
+        prisma.comment.findMany({
+            where: whereCondition,
+            skip,
+            take: limit,
+            orderBy: { created_at: 'desc' },
+            include: {
+                user: { select: { id: true, name: true, email: true } },
+                task: { select: { id: true, title: true } },
             },
-            task: {
-                select: { id: true, title: true }
-            },
-        },
-    });
-
-    const commentsWithNumber = comments.map((comment, index) => ({
-        no: skip + index + 1,
-        ...comment,
-    }));
+        })
+    ]);
 
     res.status(200).json({
         success: true,
@@ -98,7 +111,7 @@ const getAllComment = asyncHandler(async (req, res) => {
         currentPage: page,
         totalData,
         totalPages: Math.ceil(totalData / limit),
-        data: commentsWithNumber,
+        data: comments.map((comment, index) => ({ no: skip + index + 1, ...comment })),
     });
 });
 
@@ -108,11 +121,8 @@ const getCommentById = asyncHandler(async (req, res) => {
     const comment = await prisma.comment.findUnique({
         where: { id },
         include: {
-            user: {
-                select: { id: true, name: true, email: true }},
-            task: {
-                select: { id: true, title: true }
-            },
+            user: { select: { id: true, name: true, email: true } },
+            task: { select: { id: true, title: true } },
         },
     });
 
@@ -130,53 +140,6 @@ const getCommentById = asyncHandler(async (req, res) => {
     });
 });
 
-const updateComment = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) {
-        return res.status(422).json({
-            success: false,
-            message: "Validation error",
-            errors: errors.array(),
-        });
-    };
-
-    const { user_id, task_id, content } = req.body;
-
-    const existingComment = await prisma.comment.findUnique({ where: { id } });
-    if (!existingComment) {
-        return res.status(404).json({
-            success: false,
-            message: 'Comment not found.',
-        });
-    };
-
-    const updateData = {};
-    if (user_id) updateData.user = { connect: { id: user_id } };
-    if (task_id) updateData.task = { connect: { id: task_id } };
-    if (content) updateData.content = content;
-
-    const updatedComment = await prisma.comment.update({
-        where: { id },
-        data: updateData,
-        include: {
-            user: {
-                select: { id: true, name: true, email: true }
-            },
-            task: {
-                select: { id: true, title: true }
-            },
-        },
-    });
-
-    res.status(200).json({
-        success: true,
-        message: "Comment updated successfully",
-        data: updatedComment,
-    });
-});
-
 const deleteComment = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
@@ -190,6 +153,7 @@ const deleteComment = asyncHandler(async (req, res) => {
             }
         }
     });
+
     if (!existingComment) {
         return res.status(404).json({
             success: false,
@@ -197,13 +161,26 @@ const deleteComment = asyncHandler(async (req, res) => {
         });
     };
 
-    // send notification before deletion
+    if (existingComment.user_id !== req.user.id) {
+        return res.status(403).json({
+            success: false,
+            message: 'Access denied. You can only delete your own comment.',
+        });
+    };
+
     await notifyCommentDeletion(
         existingComment.task_id, 
         existingComment.content, 
         req.user?.id || 'System', 
-        existingComment.task.assignedUser.id
+        existingComment.task.assignedUser?.id
     );
+
+    await logActivity({
+        user_id: req.user.id,
+        action: 'comment_deleted',
+        entity_type: 'comment',
+        entity_id: existingComment.id,
+    });
 
     await prisma.comment.delete({ where: { id } });
 
@@ -213,4 +190,4 @@ const deleteComment = asyncHandler(async (req, res) => {
     });
 });
 
-module.exports = { createComment, getAllComment, getCommentById, updateComment, deleteComment };
+module.exports = { createComment, getAllComment, getCommentById, deleteComment };
