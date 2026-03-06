@@ -24,6 +24,9 @@
   },
   "jest": {
     "testEnvironment": "node",
+    "setupFiles": ["./jest.setup.js"],
+    "testTimeout": 10000,
+    "testMatch": ["**/tests/**/*.test.js"],
     "collectCoverageFrom": [
       "src/**/*.js",
       "!src/**/*.test.js"
