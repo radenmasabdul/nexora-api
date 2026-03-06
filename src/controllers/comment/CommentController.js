@@ -35,7 +35,7 @@ const createComment = asyncHandler(async (req, res) => {
         });
     }
 
-    const newComment = await prisma.comments.create({
+    const newComment = await prisma.comment.create({
         data: {
             user: { connect: { id: user_id } },
             task: { connect: { id: task_id } },
@@ -70,9 +70,9 @@ const getAllComment = asyncHandler(async (req, res) => {
     const sanitizedSearch = search.replace(/[%_]/g, '\\$&');
     const whereCondition = search ? { content: { contains: sanitizedSearch, mode: 'insensitive'} } : {};
     
-    const totalData = await prisma.comments.count({ where: whereCondition });
+    const totalData = await prisma.comment.count({ where: whereCondition });
 
-    const comments = await prisma.comments.findMany({
+    const comments = await prisma.comment.findMany({
         where: whereCondition,
         skip,
         take: limit,
@@ -105,7 +105,7 @@ const getAllComment = asyncHandler(async (req, res) => {
 const getCommentById = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
-    const comment = await prisma.comments.findUnique({
+    const comment = await prisma.comment.findUnique({
         where: { id },
         include: {
             user: {
@@ -144,7 +144,7 @@ const updateComment = asyncHandler(async (req, res) => {
 
     const { user_id, task_id, content } = req.body;
 
-    const existingComment = await prisma.comments.findUnique({ where: { id } });
+    const existingComment = await prisma.comment.findUnique({ where: { id } });
     if (!existingComment) {
         return res.status(404).json({
             success: false,
@@ -157,7 +157,7 @@ const updateComment = asyncHandler(async (req, res) => {
     if (task_id) updateData.task = { connect: { id: task_id } };
     if (content) updateData.content = content;
 
-    const updatedComment = await prisma.comments.update({
+    const updatedComment = await prisma.comment.update({
         where: { id },
         data: updateData,
         include: {
@@ -180,7 +180,7 @@ const updateComment = asyncHandler(async (req, res) => {
 const deleteComment = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
-    const existingComment = await prisma.comments.findUnique({ 
+    const existingComment = await prisma.comment.findUnique({ 
         where: { id },
         include: {
             task: {
@@ -205,7 +205,7 @@ const deleteComment = asyncHandler(async (req, res) => {
         existingComment.task.assignedUser.id
     );
 
-    await prisma.comments.delete({ where: { id } });
+    await prisma.comment.delete({ where: { id } });
 
     res.status(200).json({
         success: true,
