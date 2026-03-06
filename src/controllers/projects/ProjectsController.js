@@ -14,16 +14,16 @@ const createProject = asyncHandler(async (req, res) => {
     }
 
     const { team_id, name, description, status, deadline } = req.body;
-    const validStatusProject = ['active', 'on_hold', 'completed'];
+    const validStatusProject = ['planning', 'in_progress', 'on_hold', 'completed'];
 
     if(status && !validStatusProject.includes(status)) {
         return res.status(400).json({
             success: false,
-            message: 'Invalid status value. Allowed statuses: active, on_hold, completed.',
+            message: 'Invalid status value. Allowed statuses: planning, in_progress, on_hold, completed.',
         })
     };
 
-    const existingProject = await prisma.projects.findFirst({
+    const existingProject = await prisma.project.findFirst({
         where: {
             AND: [
                 { team_id: team_id },
@@ -39,7 +39,7 @@ const createProject = asyncHandler(async (req, res) => {
         });
     }
 
-    const newProject = await prisma.projects.create({
+    const newProject = await prisma.project.create({
         data: {
             team: { connect: { id: team_id } },
             name,
@@ -85,9 +85,9 @@ const getAllProjects = asyncHandler(async (req, res) => {
         ...(status ? { status } : {}),
     };
 
-    const totalData = await prisma.projects.count({ where: whereCondition });
+    const totalData = await prisma.project.count({ where: whereCondition });
 
-    const projects = await prisma.projects.findMany({
+    const projects = await prisma.project.findMany({
         where: whereCondition,
         skip,
         take: limit,
@@ -117,7 +117,7 @@ const getAllProjects = asyncHandler(async (req, res) => {
 const getProjectById = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
-    const project = await prisma.projects.findUnique({
+    const project = await prisma.project.findUnique({
         where: { id },
         include: {
             team: {
@@ -153,16 +153,16 @@ const updateProject = asyncHandler(async (req, res) => {
     };
 
     const { team_id, name, description, status, deadline } = req.body;
-    const validStatusProject = ['active', 'on_hold', 'completed'];
+    const validStatusProject = ['planning', 'in_progress', 'on_hold', 'completed'];
 
     if(status && !validStatusProject.includes(status)) {
         return res.status(400).json({
             success: false,
-            message: 'Invalid status value. Allowed statuses: active, on_hold, completed.',
+            message: 'Invalid status value. Allowed statuses: planning, in_progress, on_hold, completed.',
         })
     };
 
-    const currentProject = await prisma.projects.findUnique({ where: { id } });
+    const currentProject = await prisma.project.findUnique({ where: { id } });
     if (!currentProject) {
         return res.status(404).json({
             success: false,
@@ -170,7 +170,7 @@ const updateProject = asyncHandler(async (req, res) => {
         });
     };
 
-    const existingProject = await prisma.projects.findFirst({
+    const existingProject = await prisma.project.findFirst({
         where: { 
             AND: [
                 { team_id: team_id },
@@ -187,7 +187,7 @@ const updateProject = asyncHandler(async (req, res) => {
         });
     }
 
-    const updatedProject = await prisma.projects.update({
+    const updatedProject = await prisma.project.update({
         where: { id },
         data: {
             team: { connect: { id: team_id } },
@@ -218,7 +218,7 @@ const updateProject = asyncHandler(async (req, res) => {
 const deleteProject = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
-    const existingProject = await prisma.projects.findUnique({ where: { id } });
+    const existingProject = await prisma.project.findUnique({ where: { id } });
     if (!existingProject) {
         return res.status(404).json({
             success: false,
@@ -229,7 +229,7 @@ const deleteProject = asyncHandler(async (req, res) => {
     // send notification before deletion
     await notifyProjectDeletion(existingProject.name, existingProject.team_id, req.user?.name || 'System');
 
-    await prisma.projects.delete({ where: { id } });
+    await prisma.project.delete({ where: { id } });
 
     res.status(200).json({
         success: true,

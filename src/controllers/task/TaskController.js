@@ -15,7 +15,7 @@ const createTask = asyncHandler(async (req, res) => {
 
     const { project_id, assign_to, title, description, priority, status, due_date } = req.body;
 
-    const project = await prisma.projects.findUnique({ where: { id: project_id } });
+    const project = await prisma.project.findUnique({ where: { id: project_id } });
     if (!project) {
         return res.status(404).json({
             success: false,
@@ -174,7 +174,7 @@ const updateTask = asyncHandler(async (req, res) => {
     const { project_id, assign_to, title, description, priority, status, due_date } = req.body;
 
     if (project_id) {
-        const project = await prisma.projects.findUnique({ where: { id: project_id } });
+        const project = await prisma.project.findUnique({ where: { id: project_id } });
         if (!project) {
             return res.status(404).json({
                 success: false,
