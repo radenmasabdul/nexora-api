@@ -80,15 +80,23 @@ const getAllTask = asyncHandler(async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     const search = req.query.search || '';
+    const status = req.query.status || null;
+    const priority = req.query.priority || null;
 
-    const whereCondition = search
-        ? {
-            OR: [
-                { title: { contains: search, mode: 'insensitive' } },
-                { description: { contains: search, mode: 'insensitive' } },
-            ],
-        }
-        : {};
+    const whereCondition = {
+        ...(
+            search
+            ? {
+                OR: [
+                    { title: { contains: search, mode: 'insensitive' } },
+                    { description: { contains: search, mode: 'insensitive' } },
+                ],
+            }
+            : {}
+        ),
+        ...(status ? { status } : {}),
+        ...(priority ? { priority } : {}),
+    }
 
     const totalData = await prisma.task.count({ where: whereCondition });
 
