@@ -1,13 +1,11 @@
 const express = require('express');
 const router = express.Router();
 
-const { getAllActivityLogs, getActivityLogById, createActivityLog, deleteActivityLog} = require('../../controllers/activity/ActivityLogController');
-const { validateCreateActivity } = require('../../utils/validators/activity/activity');
+const { getAllActivityLogs, getActivityLogById } = require('../../controllers/activity/ActivityLogController');
 const verifyToken = require('../../middlewares/auth/auth');
+const roleMiddleware = require('../../middlewares/role/role');
 
-router.get('/all', verifyToken, getAllActivityLogs);
-router.get('/:id', verifyToken, getActivityLogById);
-router.post('/create', verifyToken, validateCreateActivity, createActivityLog);
-router.delete('/delete/:id', verifyToken, deleteActivityLog);
+router.get('/', verifyToken, roleMiddleware(['administrator', 'manager_division']), getAllActivityLogs);
+router.get('/:id', verifyToken, roleMiddleware(['administrator', 'manager_division']), getActivityLogById);
 
 module.exports = router;

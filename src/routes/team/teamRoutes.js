@@ -5,11 +5,11 @@ const { createTeam, getAllTeams, getTeamsById, updateTeam, deleteTeam, getTeamMe
 const { validateCreateTeam, validateUpdateTeam } = require('../../utils/validators/team/team');
 const verifyToken = require('../../middlewares/auth/auth');
 
-router.get('/all', verifyToken, getAllTeams);
-router.get('/:id', verifyToken, getTeamsById);
+router.get('/', verifyToken, getAllTeams);
 router.get('/:id/members', verifyToken, getTeamMembers);
-router.post('/create', verifyToken, validateCreateTeam, createTeam);
-router.put('/update/:id', verifyToken, validateUpdateTeam, updateTeam);
-router.delete('/delete/:id', verifyToken, deleteTeam);
+router.get('/:id', verifyToken, getTeamsById);
+router.post('/', verifyToken, validateCreateTeam, createTeam);
+router.patch('/:id', verifyToken, validateUpdateTeam, updateTeam);
+router.delete('/:id', verifyToken, deleteTeam);
 
 module.exports = router;

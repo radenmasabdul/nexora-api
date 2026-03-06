@@ -4,17 +4,18 @@ const verifyToken = (req, res, next) => {
     const authHeader = req.headers.authorization;
     let token;
 
-    // cek token dari Authorization header dulu
     if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.split(' ')[1];
     }
-    // jika tidak ada, cek dari cookie
     else if (req.cookies && req.cookies.token) {
         token = req.cookies.token;
     }
 
     if (!token) {
-        return res.status(401).json({ message: 'Unauthenticated.' });
+        return res.status(401).json({
+            success: false,
+            message: 'Unauthenticated.'
+        });
     }
 
     try {
@@ -22,7 +23,10 @@ const verifyToken = (req, res, next) => {
         req.user = decoded;
         next();
     } catch {
-        return res.status(401).json({ message: 'Invalid token.' });
+        return res.status(401).json({
+            success: false,
+            message: 'Invalid token.'
+        });
     }
 }
 

@@ -39,7 +39,7 @@ const createUser = asyncHandler(async (req, res) => {
             name,
             email,
             password: hashPassword,
-            role,
+            role: role || 'staff',
             avatar_url: avatar_url || null,
         },
     });
@@ -74,28 +74,24 @@ const getAllUsers = asyncHandler(async (req, res) => {
         ...(role ? { role } : {}),
     };
 
-    const totalData = await prisma.user.count({ where: whereCondition });
-
-    const users = await prisma.user.findMany({
-        where: whereCondition,
-        skip,
-        take: limit,
-        orderBy: { created_at: 'asc' },
-        select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-            avatar_url: true,
-            created_at: true,
-            updated_at: true,
-        },
-    });
-
-    const userWithNumber = users.map((user, index) => ({
-        no: skip + index + 1,
-        ...user,
-    }));
+    const [totalData, users] = await Promise.all([
+        prisma.user.count({ where: whereCondition }),
+        prisma.user.findMany({
+            where: whereCondition,
+            skip,
+            take: limit,
+            orderBy: { created_at: 'asc' },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                avatar_url: true,
+                created_at: true,
+                updated_at: true,
+            },
+        })
+    ]);
 
     res.status(200).json({
         success: true,
@@ -103,7 +99,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
         currentPage: page,
         totalData,
         totalPages: Math.ceil(totalData / limit),
-        data: userWithNumber,
+        data: users.map((user, index) => ({ no: skip + index + 1, ...user })),
     });
 });
 
@@ -160,6 +156,7 @@ const updateUser = asyncHandler(async (req, res) => {
     };
 
     const existingUser = await prisma.user.findUnique({ where: { id } });
+
     if (!existingUser) {
         return res.status(404).json({
             success: false,
@@ -216,9 +213,9 @@ const updateUser = asyncHandler(async (req, res) => {
     const updatedUser = await prisma.user.update({
         where: { id },
         data: {
-            name,
-            email,
-            role,
+            ...(name && { name }),
+            ...(email && { email }),
+            ...(role && { role }),
             avatar_url: avatarUrl,
             ...(hashedPassword && { password: hashedPassword }),
         },
@@ -237,11 +234,21 @@ const deleteUser = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
     const existingUser = await prisma.user.findUnique({ where: { id } });
+    
     if (!existingUser) {
         return res.status(404).json({
             success: false,
             message: "User not found.",
         });
+    }
+
+    if (existingUser.avatar_url) {
+        const oldPath = existingUser.avatar_url.split("/nexora-avatars/")[1];
+        if (oldPath) {
+            await supabase.storage
+                .from("nexora-avatars")
+                .remove([oldPath]);
+        }
     }
 
     await prisma.user.delete({ where: { id } });

@@ -4,11 +4,7 @@ const prisma = require('../../../prisma/client/index.js');
 const createNotification = async (userId, message) => {
   try {
     await prisma.notification.create({
-      data: {
-        user_id: userId,
-        message,
-        is_read: false
-      }
+      data: { user_id: userId, message, is_read: false }
     });
   } catch (error) {
     console.error('Error creating notification:', error);
@@ -34,11 +30,7 @@ const notifyNewComment = async (taskId, commenterId) => {
       assignedUser: { select: { id: true, name: true } },
       project: { 
         include: { 
-          team: { 
-            include: { 
-              members: { select: { user_id: true } } 
-            } 
-          } 
+          team: { include: { members: { select: { user_id: true } } } } 
         } 
       }
     }
@@ -51,7 +43,7 @@ const notifyNewComment = async (taskId, commenterId) => {
 
   const message = `${commenter.name} commented on task: "${task.title}"`;
   
-  if (task.assignedUser.id !== commenterId) {
+  if (task.assignedUser && task.assignedUser.id !== commenterId) {
     await createNotification(task.assignedUser.id, message);
   }
 };
@@ -100,11 +92,7 @@ const notifyTaskStatusChange = async (taskId, newStatus, updaterName) => {
       assignedUser: { select: { id: true } },
       project: {
         include: {
-          team: {
-            include: {
-              members: { select: { user_id: true } }
-            }
-          }
+          team: { include: { members: { select: { user_id: true } } } }
         }
       }
     }
@@ -113,9 +101,13 @@ const notifyTaskStatusChange = async (taskId, newStatus, updaterName) => {
   const message = `Task "${task.title}" status changed to ${newStatus} by ${updaterName}`;
   
   // notify assignee and team members
-  const notifyIds = [task.assignedUser.id, ...task.project.team.members.map(m => m.user_id)];
+  const notifyIds = [
+    ...(task.assignedUser ? [task.assignedUser.id] : []),
+    ...task.project.team.members.map(m => m.user_id)
+  ];
+    
   const uniqueIds = [...new Set(notifyIds)];
-  
+
   for (const userId of uniqueIds) {
     await createNotification(userId, message);
   }
@@ -127,9 +119,7 @@ const notifyProjectDeadline = async (projectId) => {
     where: { id: projectId },
     include: {
       team: {
-        include: {
-          members: { select: { user_id: true } }
-        }
+        include: { members: { select: { user_id: true } } }
       }
     }
   });
@@ -145,15 +135,13 @@ const notifyProjectDeadline = async (projectId) => {
 const notifyTeamCreation = async (teamId, creatorId) => {
   const team = await prisma.team.findUnique({
     where: { id: teamId },
-    include: {
-      createdBy: { select: { name: true } }
-    }
+    include: { createdBy: { select: { name: true } } }
   });
 
   const message = `New team "${team.name}" has been created by ${team.createdBy.name}`;
   // notify all admins about new team creation
   const admins = await prisma.user.findMany({
-    where: { role: 'ADMIN' },
+    where: { role: 'administrator' },
     select: { id: true }
   });
   
@@ -164,8 +152,22 @@ const notifyTeamCreation = async (teamId, creatorId) => {
   }
 };
 
+const notifyTeamDeletion = async (teamId, deleterName) => {
+    const team = await prisma.team.findUnique({
+        where: { id: teamId },
+        include: { members: { select: { user_id: true } } }
+    });
+
+    const message = `Team "${team.name}" has been deleted by ${deleterName}`;
+
+    for (const member of team.members) {
+        await createNotification(member.user_id, message);
+    }
+};
+
 // notification ketika task dihapus
 const notifyTaskDeletion = async (taskTitle, assignedUserId, deleterName) => {
+  if (!assignedUserId) return;
   const message = `Task "${taskTitle}" has been deleted by ${deleterName}`;
   await createNotification(assignedUserId, message);
 };
@@ -175,11 +177,7 @@ const notifyProjectStatusChange = async (projectId, newStatus, updaterName) => {
   const project = await prisma.project.findUnique({
     where: { id: projectId },
     include: {
-      team: {
-        include: {
-          members: { select: { user_id: true } }
-        }
-      }
+      team: { include: { members: { select: { user_id: true } } } }
     }
   });
 
@@ -205,11 +203,10 @@ const notifyMemberRemoval = async (teamId, removedUserId, removerName) => {
 const notifyTaskDueDate = async (taskId) => {
   const task = await prisma.task.findUnique({
     where: { id: taskId },
-    include: {
-      assignedUser: { select: { id: true } }
-    }
+    include: { assignedUser: { select: { id: true } } }
   });
 
+  if (!task.assignedUser) return;
   const message = `Task "${task.title}" is due soon! Please complete it on time.`;
   await createNotification(task.assignedUser.id, message);
 };
@@ -228,7 +225,7 @@ const notifyCommentDeletion = async (taskId, commentContent, deleterId, taskAssi
 
   const message = `A comment on task "${task.title}" has been deleted by ${deleter.name}`;
   
-  if (taskAssigneeId !== deleterId) {
+  if (taskAssigneeId && taskAssigneeId !== deleterId) {
     await createNotification(taskAssigneeId, message);
   }
 };
@@ -248,9 +245,7 @@ const notifyRoleChange = async (teamId, userId, newRole, changerName) => {
 const notifyProjectDeletion = async (projectName, teamId, deleterName) => {
   const team = await prisma.team.findUnique({
     where: { id: teamId },
-    include: {
-      members: { select: { user_id: true } }
-    }
+    include: { members: { select: { user_id: true } } }
   });
 
   const message = `Project "${projectName}" has been deleted by ${deleterName}`;
@@ -268,6 +263,7 @@ module.exports = {
   notifyTaskStatusChange,
   notifyProjectDeadline,
   notifyTeamCreation,
+  notifyTeamDeletion,
   notifyTaskDeletion,
   notifyProjectStatusChange,
   notifyMemberRemoval,

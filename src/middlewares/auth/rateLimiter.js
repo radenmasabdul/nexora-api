@@ -1,6 +1,5 @@
 const rateLimit = require('express-rate-limit');
 
-// rate limiter untuk login - lebih ketat
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 5, // hanya 5 percobaan login per 15 menit
@@ -12,7 +11,6 @@ const loginLimiter = rateLimit({
     legacyHeaders: false,
 });
 
-// rate limiter untuk register
 const registerLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 3, // hanya 3 registrasi per jam per IP

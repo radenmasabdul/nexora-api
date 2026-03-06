@@ -2,6 +2,7 @@ const prisma = require('../../../prisma/client/index.js');
 const asyncHandler = require('../../utils/handlers/asyncHandler');
 const { validationResult } = require('express-validator');
 const { notifyTaskAssignment, notifyTaskStatusChange, notifyTaskDeletion } = require('../../utils/helpers/notificationHelper');
+const { logActivity } = require('../activity/ActivityLogController.js');
 
 const createTask = asyncHandler(async (req, res) => {
     const errors = validationResult(req);
@@ -16,6 +17,7 @@ const createTask = asyncHandler(async (req, res) => {
     const { project_id, assign_to, title, description, priority, status, due_date } = req.body;
 
     const project = await prisma.project.findUnique({ where: { id: project_id } });
+    
     if (!project) {
         return res.status(404).json({
             success: false,
@@ -23,19 +25,18 @@ const createTask = asyncHandler(async (req, res) => {
         });
     }
 
-    const user = await prisma.user.findUnique({ where: { id: assign_to } });
-    if (!user) {
-        return res.status(404).json({
-            success: false,
-            message: 'User not found.',
-        });
+    if (assign_to) {
+        const user = await prisma.user.findUnique({ where: { id: assign_to } });
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found.',
+            });
+        }
     }
 
     const existingTask = await prisma.task.findFirst({
-        where: {
-            project_id,
-            title,
-        }
+        where: { project_id, title}
     });
 
     if (existingTask) {
@@ -54,19 +55,24 @@ const createTask = asyncHandler(async (req, res) => {
             priority,
             status,
             due_date: new Date(due_date),
+            created_by: req.user.id,
         },
         include: {
-            project: {
-                select: { id: true, name: true }
-            },
-            assignedUser: {
-                select: { id: true, name: true, email: true }
-            },
+            project: { select: { id: true, name: true } },
+            assignedUser: { select: { id: true, name: true, email: true } },
         },
     });
 
-    // send notification to assigned user
-    await notifyTaskAssignment(newTask.id, assign_to, req.user?.name || 'System');
+    if (assign_to) {
+        await notifyTaskAssignment(newTask.id, assign_to, req.user?.name || 'System');
+    }
+
+    await logActivity({
+        user_id: req.user.id,
+        action: 'task_created',
+        entity_type: 'task',
+        entity_id: newTask.id,
+    });
 
     res.status(201).json({
         success: true,
@@ -241,12 +247,44 @@ const updateTask = asyncHandler(async (req, res) => {
         },
     });
 
-    // send notifications for changes
     if (assign_to && assign_to !== currentTask.assign_to) {
         await notifyTaskAssignment(id, assign_to, req.user?.name || 'System');
+        await logActivity({
+            user_id: req.user.id,
+            action: 'task_assigned',
+            entity_type: 'task',
+            entity_id: id,
+        });
     }
+
     if (status && status !== currentTask.status) {
         await notifyTaskStatusChange(id, status, req.user?.name || 'System');
+        await logActivity({
+            user_id: req.user.id,
+            action: status === 'done' ? 'task_completed' : 'status_updated',
+            entity_type: 'task',
+            entity_id: id,
+        });
+    }
+
+    if (priority && priority !== currentTask.priority) {
+        await logActivity({
+            user_id: req.user.id,
+            action: 'priority_changed',
+            entity_type: 'task',
+            entity_id: id,
+        });
+    }
+
+    const hasSpecificChange = (assign_to && assign_to !== currentTask.assign_to) || (status && status !== currentTask.status) || (priority && priority !== currentTask.priority);
+
+    if (!hasSpecificChange) {
+        await logActivity({
+            user_id: req.user.id,
+            action: 'task_updated',
+            entity_type: 'task',
+            entity_id: id,
+        });
     }
 
     res.status(200).json({
@@ -265,6 +303,7 @@ const deleteTask = asyncHandler(async (req, res) => {
             assignedUser: { select: { id: true } }
         }
     });
+
     if (!existingTask) {
         return res.status(404).json({
             success: false,
@@ -272,8 +311,16 @@ const deleteTask = asyncHandler(async (req, res) => {
         });
     }
 
-    // send notification before deletion
-    await notifyTaskDeletion(existingTask.title, existingTask.assign_to, req.user?.name || 'System');
+    if (existingTask.assign_to) {
+        await notifyTaskDeletion(existingTask.title, existingTask.assign_to, req.user?.name || 'System');
+    }
+    
+    await logActivity({
+        user_id: req.user.id,
+        action: 'task_deleted',
+        entity_type: 'task',
+        entity_id: existingTask.id,
+    });
 
     await prisma.task.delete({ where: { id } });
 

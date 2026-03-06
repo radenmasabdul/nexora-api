@@ -2,6 +2,7 @@ const prisma = require('../../../prisma/client/index.js');
 const asyncHandler = require('../../utils/handlers/asyncHandler');
 const { validationResult } = require('express-validator');
 const { notifyNewProject, notifyProjectStatusChange, notifyProjectDeletion } = require('../../utils/helpers/notificationHelper');
+const { logActivity } = require('../activity/ActivityLogController.js');
 
 const createProject = asyncHandler(async (req, res) => {
     const errors = validationResult(req);
@@ -23,12 +24,18 @@ const createProject = asyncHandler(async (req, res) => {
         })
     };
 
+    const team = await prisma.team.findUnique({ where: { id: team_id } });
+
+    if (!team) {
+        return res.status(404).json({
+            success: false,
+            message: 'Team not found.',
+        });
+    }
+
     const existingProject = await prisma.project.findFirst({
         where: {
-            AND: [
-                { team_id: team_id },
-                { name: name },
-            ]
+            AND: [{ team_id: team_id },{ name: name }]
         }
     });
 
@@ -46,16 +53,21 @@ const createProject = asyncHandler(async (req, res) => {
             description,
             status,
             deadline,
+            created_by: req.user.id,
         },
         include: {
-            team: {
-                select: { id: true, name: true, description: true }
-            },
+            team: { select: { id: true, name: true, description: true } },
         },
     });
 
-    // send notification to team members
     await notifyNewProject(newProject.id, req.user?.id || 'System');
+
+    await logActivity({
+        user_id: req.user.id,
+        action: 'project_created',
+        entity_type: 'project',
+        entity_id: newProject.id,
+    });
 
     res.status(201).json({
         success: true,
@@ -70,6 +82,7 @@ const getAllProjects = asyncHandler(async (req, res) => {
     const skip = (page - 1) * limit;
     const search = req.query.search || '';
     const status = req.query.status || null;
+    const team_id = req.query.team_id || null;
 
     const whereCondition = {
         ...(
@@ -83,26 +96,21 @@ const getAllProjects = asyncHandler(async (req, res) => {
             : {}
         ),
         ...(status ? { status } : {}),
+        ...(team_id ? { team_id } : {}),
     };
 
-    const totalData = await prisma.project.count({ where: whereCondition });
-
-    const projects = await prisma.project.findMany({
-        where: whereCondition,
-        skip,
-        take: limit,
-        orderBy: { created_at: 'asc' },
-        include: {
-            team: {
-                select: { id: true, name: true, description: true }
+    const [totalData, projects] = await Promise.all([
+        prisma.project.count({ where: whereCondition }),
+        prisma.project.findMany({
+            where: whereCondition,
+            skip,
+            take: limit,
+            orderBy: { created_at: 'asc' },
+            include: {
+                team: { select: { id: true, name: true, description: true } },
             },
-        },
-    });
-
-    const projectsWithNumber = projects.map((project, index) => ({
-        no: skip + index + 1,
-        ...project,
-    }));
+        })
+    ]);
 
     res.status(200).json({
         success: true,
@@ -110,7 +118,7 @@ const getAllProjects = asyncHandler(async (req, res) => {
         currentPage: page,
         totalData,
         totalPages: Math.ceil(totalData / limit),
-        data: projectsWithNumber,
+        data: projects.map((project, index) => ({ no: skip + index + 1, ...project })),
     });
 });
 
@@ -120,9 +128,7 @@ const getProjectById = asyncHandler(async (req, res) => {
     const project = await prisma.project.findUnique({
         where: { id },
         include: {
-            team: {
-                select: { id: true, name: true, description: true }
-            },
+            team: { select: { id: true, name: true, description: true } },
         },
     });
 
@@ -163,6 +169,7 @@ const updateProject = asyncHandler(async (req, res) => {
     };
 
     const currentProject = await prisma.project.findUnique({ where: { id } });
+
     if (!currentProject) {
         return res.status(404).json({
             success: false,
@@ -170,42 +177,54 @@ const updateProject = asyncHandler(async (req, res) => {
         });
     };
 
-    const existingProject = await prisma.project.findFirst({
-        where: { 
-            AND: [
-                { team_id: team_id },
-                { name: name },
-                { id: { not: id } }
-            ]
-        }
-    });
-
-    if (existingProject && existingProject.id !== id) {
-        return res.status(409).json({
-            success: false,
-            message: 'Project with the same name already exists in the team.',
+    if (team_id && name) {
+        const existingProject = await prisma.project.findFirst({
+            where: {
+                AND: [
+                    { team_id },
+                    { name },
+                    { id: { not: id } }
+                ]
+            }
         });
+        if (existingProject) {
+            return res.status(409).json({
+                success: false,
+                message: 'Project with the same name already exists in the team.',
+            });
+        }
     }
 
     const updatedProject = await prisma.project.update({
         where: { id },
         data: {
-            team: { connect: { id: team_id } },
-            name,
-            description,
-            status,
-            deadline,
+            ...(team_id && { team: { connect: { id: team_id } } }),
+            ...(name && { name }),
+            ...(description !== undefined && { description }),
+            ...(status && { status }),
+            ...(deadline && { deadline }),
         },
         include: {
-            team: {
-                select: { id: true, name: true, description: true }
-            },
+            team: { select: { id: true, name: true, description: true } },
         },
     });
 
-    // send notification if status changed
     if (status && status !== currentProject.status) {
         await notifyProjectStatusChange(id, status, req.user?.name || 'System');
+
+        await logActivity({
+            user_id: req.user.id,
+            action: 'status_updated',
+            entity_type: 'project',
+            entity_id: id,
+        });
+    } else {
+        await logActivity({
+            user_id: req.user.id,
+            action: 'project_updated',
+            entity_type: 'project',
+            entity_id: id,
+        });
     }
 
     res.status(200).json({
@@ -219,6 +238,7 @@ const deleteProject = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
     const existingProject = await prisma.project.findUnique({ where: { id } });
+    
     if (!existingProject) {
         return res.status(404).json({
             success: false,
@@ -226,8 +246,14 @@ const deleteProject = asyncHandler(async (req, res) => {
         });
     };
 
-    // send notification before deletion
     await notifyProjectDeletion(existingProject.name, existingProject.team_id, req.user?.name || 'System');
+
+    await logActivity({
+        user_id: req.user.id,
+        action: 'project_deleted',
+        entity_type: 'project',
+        entity_id: existingProject.id,
+    });
 
     await prisma.project.delete({ where: { id } });
 

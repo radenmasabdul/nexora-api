@@ -5,10 +5,10 @@ const { createMember, getAllMembers, getMemberById, updateMember, deleteMember }
 const { validateCreateTeamMember, validateUpdateTeamMember } = require('../../utils/validators/member/member');
 const verifyToken = require('../../middlewares/auth/auth');
 
-router.get('/all', verifyToken, getAllMembers);
+router.get('/', verifyToken, getAllMembers);
 router.get('/:id', verifyToken, getMemberById);
-router.post('/create', verifyToken, validateCreateTeamMember, createMember);
-router.put('/update/:id', verifyToken, validateUpdateTeamMember, updateMember);
-router.delete('/delete/:id', verifyToken, deleteMember);
+router.post('/', verifyToken, validateCreateTeamMember, createMember);
+router.patch('/:id', verifyToken, validateUpdateTeamMember, updateMember);
+router.delete('/:id', verifyToken, deleteMember);
 
 module.exports = router;

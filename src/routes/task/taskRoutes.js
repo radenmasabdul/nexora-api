@@ -5,10 +5,10 @@ const { createTask, getAllTask, getTaskById, updateTask, deleteTask } = require(
 const { validateCreateTask, validateUpdateTask } = require('../../utils/validators/task/task');
 const verifyToken = require('../../middlewares/auth/auth');
 
-router.get('/all', verifyToken, getAllTask);
+router.get('/', verifyToken, getAllTask);
 router.get('/:id', verifyToken, getTaskById);
-router.post('/create', verifyToken, validateCreateTask, createTask);
-router.put('/update/:id', verifyToken, validateUpdateTask, updateTask);
-router.delete('/delete/:id', verifyToken, deleteTask);
+router.post('/', verifyToken, validateCreateTask, createTask);
+router.patch('/:id', verifyToken, validateUpdateTask, updateTask);
+router.delete('/:id', verifyToken, deleteTask);
 
 module.exports = router;
