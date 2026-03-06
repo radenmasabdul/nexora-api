@@ -2,7 +2,7 @@ const prisma = require('../../../prisma/client/index.js');
 const asyncHandler = require('../../utils/handlers/asyncHandler.js');
 
 const getProjectProgressStats = asyncHandler(async (req, res) => {
-    const projects = await prisma.projects.findMany({
+    const projects = await prisma.project.findMany({
         select: {
             id: true,
             name: true,
