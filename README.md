@@ -158,60 +158,57 @@ nexora-api/
 - `POST /auth/logout` - Log out a user
 
 ### Users
-- `POST /users/create` - Create a new user
-- `GET /users/all` - Get all users
+- `POST /users` - Create a new user
+- `GET /users` - Get all users
 - `GET /users/:id` - Get user by ID
-- `PUT /users/update/:id` - Update users
-- `DELETE /users/delete/:id` - Delete user
+- `PUT /users/:id` - Update users
+- `DELETE /users/:id` - Delete user
 
 ### Teams
-- `POST /teams/create` - Create a new team
-- `GET /teams/all` - Get all teams
+- `POST /teams` - Create a new team
+- `GET /teams` - Get all teams
 - `GET /teams/:id` - Get team by ID
 - `GET /teams/:id/members` - Get member by Team
-- `PUT /teams/update/:id` - Update teams
-- `DELETE /teams/delete/:id` - Delete team
+- `PATCH /teams/:id` - Update teams
+- `DELETE /teams/:id` - Delete team
 
 ### Team Members
-- `POST /members/create` - Add members to the team
-- `GET /members/all` - Get all members
+- `POST /members` - Add members to the team
+- `GET /members` - Get all members
 - `GET /members/:id` - Get members by ID
-- `PUT /members/update/:id` - Update member roles
-- `DELETE /members/delete/:id` - Remove member
+- `PATCH /members/:id` - Update member roles
+- `DELETE /members/:id` - Remove member
 
 ### Projects
-- `POST /projects/create` - Create a new project
-- `GET /projects/all` - Get all projects
+- `POST /projects` - Create a new project
+- `GET /projects` - Get all projects
 - `GET /projects/:id` - Get project by ID
-- `PUT /projects/update/:id` - Update project
-- `DELETE /projects/delete/:id` - Delete project
+- `PATCH /projects/:id` - Update project
+- `DELETE /projects/:id` - Delete project
 
 ### Tasks
-- `POST /tasks/create` - Create a new task
-- `GET /tasks/all` - Get all tasks
+- `POST /tasks` - Create a new task
+- `GET /tasks` - Get all tasks
 - `GET /tasks/:id` - Get tasks by ID
-- `PUT /tasks/update/:id` - Update tasks
-- `DELETE /tasks/delete/:id` - Delete task
+- `PATCH /tasks/:id` - Update tasks
+- `DELETE /tasks/:id` - Delete task
 
 ### Comments
-- `POST /comments/create` - Add a new comment
-- `GET /comments/all` - Get all comments
+- `POST /comments` - Add a new comment
+- `GET /comments` - Get all comments
 - `GET /comments/:id` - Get comments by ID
-- `PUT /comments/update/:id` - Update comments
-- `DELETE /comments/delete/:id` - Delete comment
+- `DELETE /comments/:id` - Delete comment
 
 ### Activity Logs
-- `POST /activities/create` - Add a new activity
-- `GET /activities/all` - Get all activity logs
+- `GET /activities` - Get all activity logs
 - `GET /activities/:id` - Get activity by ID
-- `DELETE /activities/delete/:id` - Delete activity
 
 ### Notifications
-- `POST /notifications/create` - Add a new notifications
-- `GET /notifications/all` - Get all notifications
+- `GET /notifications` - Get all notifications
 - `GET /notifications/:id` - Get notifications by ID
-- `PATCH /notifications/:id` - Mark notification as read
-- `DELETE notifications/delete/:id` - Delete notifications
+- `PATCH /notifications/read-all` - Mark as read all
+- `PATCH /notifications/:id/read` - Mark as read
+- `DELETE notifications/:id` - Delete notifications
 
 ### Dashboard
 - `GET /dashboard/tasks/status` - Get task counts grouped by status
@@ -219,7 +216,7 @@ nexora-api/
 - `GET /dashboard/tasks/workload` - Get task workload per user or team
 - `GET /dashboard/projects/progress` - Get project progress
 - `GET /dashboard/activities/counts` - Get activity logs counts grouped by activity type
-- `GET /dashboard/teams/teams` - Get summary information about teams
+- `GET /dashboard/teams` - Get summary information about teams
 
 ### Role
 - `GET /users/roles/counts` - Get counts of users for each role

@@ -196,16 +196,82 @@ describe('Activity Log API', () => {
             expect(response.body.success).toBe(false);
         });
 
+        it('should filter by range day', async () => {
+            prisma.activityLog.findMany.mockResolvedValue([]);
+            
+            const response = await request(app)
+            .get("/dashboard/activities/counts?range=day")
+            .set("Authorization", `Bearer ${adminToken}`);
+
+            expect(response.status).toBe(200);
+            expect(response.body.success).toBe(true);
+            expect(response.body.data).toHaveLength(1);
+        });
+
         it('should filter by range week', async () => {
             prisma.activityLog.findMany.mockResolvedValue([]);
             
             const response = await request(app)
-                .get("/dashboard/activities/counts?range=week")
-                .set("Authorization", `Bearer ${adminToken}`);
+            .get("/dashboard/activities/counts?range=week")
+            .set("Authorization", `Bearer ${adminToken}`);
 
-                expect(response.status).toBe(200);
-                expect(response.body.success).toBe(true);
-                expect(response.body.data).toHaveLength(7);
+            expect(response.status).toBe(200);
+            expect(response.body.success).toBe(true);
+            expect(response.body.data).toHaveLength(7);
+        });
+
+        it('should filter by range month', async () => {
+            prisma.activityLog.findMany.mockResolvedValue([]);
+
+            const response = await request(app)
+            .get("/dashboard/activities/counts?range=month")
+            .set("Authorization", `Bearer ${adminToken}`);
+
+            expect(response.status).toBe(200);
+            expect(response.body.success).toBe(true);
+            expect(response.body.data).toHaveLength(30);
+        });
+
+        it('should filter by range year', async () => {
+            prisma.activityLog.findMany.mockResolvedValue([]);
+
+            const response = await request(app)
+            .get("/dashboard/activities/counts?range=year")
+            .set("Authorization", `Bearer ${adminToken}`);
+
+            expect(response.status).toBe(200);
+            expect(response.body.success).toBe(true);
+            expect(response.body.data).toHaveLength(12);
+        });
+
+        it('should return data with activity counts', async () => {
+            prisma.activityLog.findMany.mockResolvedValue([
+                {
+                    action: 'task_created',
+                    created_at: new Date(),
+                },
+                {
+                    action: 'task_created',
+                    created_at: new Date(),
+                },
+                {
+                    action: 'project_created',
+                    created_at: new Date(),
+                },
+            ]);
+
+            const response = await request(app)
+            .get("/dashboard/activities/counts?range=week")
+            .set("Authorization", `Bearer ${adminToken}`);
+
+            expect(response.status).toBe(200);
+            expect(response.body.success).toBe(true);
+            expect(response.body.data).toHaveLength(7);
+
+            const today = response.body.data[response.body.data.length - 1];
+            expect(today.total).toBe(3);
+            expect(today.task_created).toBe(2);
+            expect(today.project_created).toBe(1);
         });
 
         it('should return 400 for invalid range', async () => {
