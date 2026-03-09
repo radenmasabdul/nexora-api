@@ -338,6 +338,39 @@ describe('User API', () => {
             expect(response.body.data).toHaveProperty("updated_at");
         });
 
+        it('should return 200 update user with avatar upload', async () => {
+            prisma.user.findUnique.mockResolvedValueOnce({
+                id: 'user-1',
+                name: 'John Doe',
+                email: 'johndoe@example.com',
+                password: hashedPassword,
+                role: 'staff',
+                avatar_url: 'https://supabase.co/storage/v1/object/public/nexora-avatars/users/old-avatar.jpg',
+                created_at: new Date(),
+                updated_at: new Date(),
+            });
+
+            prisma.user.update.mockResolvedValue({
+                id: 'user-1',
+                name: 'John Doe',
+                email: 'johndoe@example.com',
+                role: 'staff',
+                avatar_url: 'https://supabase.co/avatar.jpg',
+                created_at: new Date(),
+                updated_at: new Date(),
+            });
+
+            const response = await request(app)
+            .patch('/users/user-1')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .attach('avatar', Buffer.from('fake-image'), 'avatar.jpg')
+            .field('name', 'John Doe Updated');
+
+            expect(response.status).toBe(200);
+            expect(response.body.success).toBe(true);
+            expect(response.body.message).toBe("User updated successfully");
+        });
+
         it('should return 400 invalid roles', async () => {
             prisma.user.findUnique.mockResolvedValue(null);
             
@@ -440,6 +473,29 @@ describe('User API', () => {
                 created_at: new Date(),
                 updated_at: new Date(),
             });
+
+            const response = await request(app)
+            .delete('/users/user-1')
+            .set('Authorization', `Bearer ${adminToken}`);
+
+            expect(response.status).toBe(200);
+            expect(response.body.success).toBe(true);
+            expect(response.body.message).toBe("User deleted successfully");
+        });
+
+        it('should return 200 delete user with avatar_url', async () => {
+            prisma.user.findUnique.mockResolvedValue({
+                id: 'user-1',
+                name: 'John Doe',
+                email: 'johndoe@example.com',
+                password: hashedPassword,
+                role: 'staff',
+                avatar_url: 'https://supabase.co/storage/v1/object/public/nexora-avatars/users/avatar.jpg',
+                created_at: new Date(),
+                updated_at: new Date(),
+            });
+
+            prisma.user.delete.mockResolvedValue({});
 
             const response = await request(app)
             .delete('/users/user-1')
