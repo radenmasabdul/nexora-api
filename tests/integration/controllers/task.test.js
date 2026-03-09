@@ -289,6 +289,38 @@ describe("Task API", () => {
             expect(response.body.success).toBe(false);
             expect(response.body.message).toBe("Task with the same title already exists in the project.");
         });
+
+        it('should return 201 without assign_to', async () => {
+            prisma.project.findUnique.mockResolvedValue({
+                id: "project-1",
+                name: "Test Project",
+            });
+            
+            prisma.task.findFirst.mockResolvedValueOnce(null);
+            prisma.task.create.mockResolvedValueOnce({
+                id: "task-1",
+                project_id: "project-1",
+                assign_to: null,
+                title: "Test Task",
+                priority: "medium",
+                status: "to_do",
+                due_date: "2026-12-31",
+            });
+            
+            const response = await request(app)
+            .post("/tasks/")
+            .set("Authorization", `Bearer ${adminToken}`)
+            .send({
+                project_id: "project-1",
+                title: "Test Task",
+                priority: "medium",
+                status: "to_do",
+                due_date: "2026-12-31",
+            });
+
+            expect(response.status).toBe(201);
+            expect(response.body.success).toBe(true);
+        });
     });
 
     describe("GET ALL TASK /tasks/", () => {
@@ -460,6 +492,51 @@ describe("Task API", () => {
             expect(response.body.data).toHaveProperty("status");
         });
 
+        it("should return 200 when assign_to changed", async () => {
+            prisma.task.findUnique
+                .mockResolvedValueOnce({
+                    id: "task-1",
+                    project_id: "project-1",
+                    assign_to: "user-1",
+                    title: "Test Task",
+                    status: "to_do",
+                    priority: "medium",
+                })
+                .mockResolvedValueOnce({
+                    id: "task-1",
+                    title: "Test Task",
+                    assignedUser: { id: "user-2" },
+                    project: {
+                        team: {
+                            members: [{ user_id: "user-1" }]
+                        }
+                    }
+                });
+
+            prisma.user.findUnique.mockResolvedValueOnce({
+                id: "user-2",
+                name: "Jane Smith",
+            });
+
+            prisma.task.update.mockResolvedValue({
+                id: "task-1",
+                title: "Test Task",
+                assign_to: "user-2",
+                project: { id: "project-1", name: "Test Project" },
+                assignedUser: { id: "user-2", name: "Jane Smith", email: "jane@example.com" },
+            });
+
+            const response = await request(app)
+            .patch("/tasks/task-1")
+            .set("Authorization", `Bearer ${adminToken}`)
+            .send({
+                assign_to: "user-2",
+            });
+
+            expect(response.status).toBe(200);
+            expect(response.body.success).toBe(true);
+        });
+
         it("should return 401 without token", async () => {
             const response = await request(app)
             .patch("/tasks/task-1");
@@ -480,6 +557,50 @@ describe("Task API", () => {
             expect(response.status).toBe(404);
             expect(response.body.success).toBe(false);
             expect(response.body.message).toBe("Task not found.");
+        });
+
+        it("should return 404 when project not found on update", async () => {
+            prisma.task.findUnique.mockResolvedValueOnce({
+                id: "task-1",
+                project_id: "project-1",
+                title: "Test Task",
+                status: "to_do",
+                priority: "medium",
+            });
+            prisma.project.findUnique.mockResolvedValueOnce(null);
+
+            const response = await request(app)
+            .patch("/tasks/task-1")
+            .set("Authorization", `Bearer ${adminToken}`)
+            .send({
+                project_id: "project-9999",
+            });
+
+            expect(response.status).toBe(404);
+            expect(response.body.success).toBe(false);
+            expect(response.body.message).toBe("Project not found.");
+        });
+
+        it("should return 404 when user not found on update", async () => {
+            prisma.task.findUnique.mockResolvedValueOnce({
+                id: "task-1",
+                project_id: "project-1",
+                title: "Test Task",
+                status: "to_do",
+                priority: "medium",
+            });
+            prisma.user.findUnique.mockResolvedValueOnce(null);
+
+            const response = await request(app)
+            .patch("/tasks/task-1")
+            .set("Authorization", `Bearer ${adminToken}`)
+            .send({
+                assign_to: "user-9999",
+            });
+
+            expect(response.status).toBe(404);
+            expect(response.body.success).toBe(false);
+            expect(response.body.message).toBe("User not found.");
         });
 
         it("should return 409 task existing", async () => {
@@ -520,6 +641,24 @@ describe("Task API", () => {
                 assignedUser: { id: "user-1" },
             });
 
+            prisma.task.delete.mockResolvedValue({});
+
+            const response = await request(app)
+            .delete("/tasks/task-1")
+            .set("Authorization", `Bearer ${adminToken}`);
+
+            expect(response.status).toBe(200);
+            expect(response.body.success).toBe(true);
+            expect(response.body.message).toBe("Task deleted successfully");
+        });
+
+        it("should return 200 when task has no assign_to", async () => {
+            prisma.task.findUnique.mockResolvedValueOnce({
+                id: "task-1",
+                title: "Test Task",
+                assign_to: null,
+                assignedUser: null,
+            });
             prisma.task.delete.mockResolvedValue({});
 
             const response = await request(app)
