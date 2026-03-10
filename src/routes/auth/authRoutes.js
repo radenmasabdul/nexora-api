@@ -78,6 +78,19 @@ const verifyToken = require('../../middlewares/auth/auth');
  *                     role:
  *                       type: string
  *                       example: staff
+ *       400:
+ *         description: Role tidak valid
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Invalid role value. Allowed: administrator, manager_division, project_owner, staff."
  *       409:
  *         description: Email sudah terdaftar
  *         content:
@@ -205,6 +218,21 @@ router.post("/register", registerLimiter, validateRegister, register);
  *                   example: User not found
  *       422:
  *         description: Validasi gagal
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Validation error
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: object
  */
 router.post("/login", loginLimiter, validateLogin, login);
 
@@ -232,6 +260,17 @@ router.post("/login", loginLimiter, validateLogin, login);
  *                   example: Logout successful
  *       401:
  *         description: Unauthorized - token tidak valid atau tidak ada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Unauthorized
  */
 router.post("/logout", verifyToken, logout);
 
