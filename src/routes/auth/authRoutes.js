@@ -17,7 +17,7 @@ const verifyToken = require('../../middlewares/auth/auth');
  * @swagger
  * /auth/register:
  *   post:
- *     summary: Register user baru
+ *     summary: Register a new user
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -51,7 +51,7 @@ const verifyToken = require('../../middlewares/auth/auth');
  *                 example: staff
  *     responses:
  *       201:
- *         description: Register berhasil
+ *         description: Register successfully
  *         content:
  *           application/json:
  *             schema:
@@ -79,7 +79,7 @@ const verifyToken = require('../../middlewares/auth/auth');
  *                       type: string
  *                       example: staff
  *       400:
- *         description: Role tidak valid
+ *         description: Invalid role value
  *         content:
  *           application/json:
  *             schema:
@@ -92,7 +92,7 @@ const verifyToken = require('../../middlewares/auth/auth');
  *                   type: string
  *                   example: "Invalid role value. Allowed: administrator, manager_division, project_owner, staff."
  *       409:
- *         description: Email sudah terdaftar
+ *         description: Email already exists.
  *         content:
  *           application/json:
  *             schema:
@@ -105,7 +105,7 @@ const verifyToken = require('../../middlewares/auth/auth');
  *                   type: string
  *                   example: Email already exists.
  *       422:
- *         description: Validasi gagal
+ *         description: Validation error
  *         content:
  *           application/json:
  *             schema:
@@ -150,7 +150,7 @@ router.post("/register", registerLimiter, validateRegister, register);
  *                 example: Password1!
  *     responses:
  *       200:
- *         description: Login berhasil
+ *         description: Login successful
  *         content:
  *           application/json:
  *             schema:
@@ -191,7 +191,7 @@ router.post("/register", registerLimiter, validateRegister, register);
  *                       type: integer
  *                       example: 1700000000
  *       401:
- *         description: Password salah
+ *         description: Invalid password
  *         content:
  *           application/json:
  *             schema:
@@ -204,7 +204,7 @@ router.post("/register", registerLimiter, validateRegister, register);
  *                   type: string
  *                   example: Invalid password
  *       404:
- *         description: User tidak ditemukan
+ *         description: User not found
  *         content:
  *           application/json:
  *             schema:
@@ -217,7 +217,7 @@ router.post("/register", registerLimiter, validateRegister, register);
  *                   type: string
  *                   example: User not found
  *       422:
- *         description: Validasi gagal
+ *         description: Validation error
  *         content:
  *           application/json:
  *             schema:
@@ -246,7 +246,7 @@ router.post("/login", loginLimiter, validateLogin, login);
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Logout berhasil
+ *         description: Logout successful
  *         content:
  *           application/json:
  *             schema:
@@ -259,7 +259,7 @@ router.post("/login", loginLimiter, validateLogin, login);
  *                   type: string
  *                   example: Logout successful
  *       401:
- *         description: Unauthorized - token tidak valid atau tidak ada
+ *         description: Unauthorized - invalid token or token not found
  *         content:
  *           application/json:
  *             schema:
