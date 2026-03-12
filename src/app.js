@@ -30,7 +30,8 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://nexora-theta-lemon.vercel.app'
+  'https://nexora-theta-lemon.vercel.app',
+  'https://nexora-api-rho.vercel.app'
 ];
 
 app.use(
