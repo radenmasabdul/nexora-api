@@ -12,6 +12,8 @@ const swaggerSpec = require("./config/swagger");
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 // rate limiting global (untuk endpoint non-auth)
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
