@@ -7,8 +7,8 @@ const verifyToken = require('../../middlewares/auth/auth');
 /**
  * @swagger
  * tags:
- *   name: Activities Dashboard
- *   description: Activity dashboard endpoints
+ *   name: Dashboard
+ *   description: Dashboard endpoints
  */
 
 /**
@@ -16,7 +16,7 @@ const verifyToken = require('../../middlewares/auth/auth');
  * /dashboard/activities/counts:
  *   get:
  *     summary: Get the number of activities per period
- *     tags: [Activities Dashboard]
+ *     tags: [Dashboard]
  *     security:
  *       - bearerAuth: []
  *     parameters:
