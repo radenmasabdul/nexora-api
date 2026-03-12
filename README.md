@@ -9,6 +9,7 @@
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg" width="50" />
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/jest/jest-plain.svg" width="50" />
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postman/postman-original.svg" width="50" />
+  <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/swagger.svg" width="50" />
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/supabase/supabase-original.svg" width="50" />
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vercel/vercel-original.svg" width="50" />
 </p>
@@ -150,6 +151,15 @@ nexora-api/
 └── package.json         # Dependencies & scripts
 ```
 
+## 🌍 API Base URL
+
+| Environment | Base URL |
+|---|---|
+| Production | https://nexora-api-rho.vercel.app |
+| Local | http://localhost:3000 |
+
+All API endpoints listed below are relative to this base URL.
+
 ## 🔗 API Endpoints
 
 ### Authentication
@@ -220,6 +230,22 @@ nexora-api/
 
 ### Role
 - `GET /users/roles/counts` - Get counts of users for each role
+
+## 📖 API Documentation
+
+Interactive API documentation is available via Swagger UI:
+
+| Environment | Swagger URL |
+|---|---|
+| Production | https://nexora-api-rho.vercel.app/api-docs/ |
+| Local | http://localhost:3000/api-docs/ |
+
+Swagger UI provides an environment selector that allows you to switch between different servers:
+
+* **Local** → Used for local development (`http://localhost:3000`)
+* **Development / Production** → Uses the deployed API (`https://nexora-api-rho.vercel.app`)
+
+You can explore and test all available endpoints directly from your browser.
 
 ## 🧪 Testing
 
