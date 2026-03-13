@@ -49,11 +49,11 @@ const createProject = asyncHandler(async (req, res) => {
     const newProject = await prisma.project.create({
         data: {
             team: { connect: { id: team_id } },
+            createdBy: { connect: { id: req.user.id } },
             name,
             description,
             status,
             deadline,
-            created_by: req.user.id,
         },
         include: {
             team: { select: { id: true, name: true, description: true } },
