@@ -60,14 +60,15 @@ const createProject = asyncHandler(async (req, res) => {
         },
     });
 
-    await notifyNewProject(newProject.id, req.user?.id || 'System');
-
-    await logActivity({
+    await Promise.all([
+      notifyNewProject(newProject.id, req.user?.id || "System"),
+      logActivity({
         user_id: req.user.id,
-        action: 'project_created',
-        entity_type: 'project',
+        action: "project_created",
+        entity_type: "project",
         entity_id: newProject.id,
-    });
+      }),
+    ]);
 
     res.status(201).json({
         success: true,
@@ -128,7 +129,26 @@ const getProjectById = asyncHandler(async (req, res) => {
     const project = await prisma.project.findUnique({
         where: { id },
         include: {
-            team: { select: { id: true, name: true, description: true } },
+            team: {
+                select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                    members: {
+                        select: {
+                            role: true,
+                            user: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    email: true,
+                                    avatar_url: true,
+                                }
+                            }
+                        }
+                    }
+                }
+            },
         },
     });
 
@@ -210,21 +230,22 @@ const updateProject = asyncHandler(async (req, res) => {
     });
 
     if (status && status !== currentProject.status) {
-        await notifyProjectStatusChange(id, status, req.user?.name || 'System');
-
-        await logActivity({
-            user_id: req.user.id,
-            action: 'status_updated',
-            entity_type: 'project',
-            entity_id: id,
-        });
+      await Promise.all([
+        notifyProjectStatusChange(id, status, req.user?.name || "System"),
+        logActivity({
+          user_id: req.user.id,
+          action: "status_updated",
+          entity_type: "project",
+          entity_id: id,
+        }),
+      ]);
     } else {
-        await logActivity({
-            user_id: req.user.id,
-            action: 'project_updated',
-            entity_type: 'project',
-            entity_id: id,
-        });
+      await logActivity({
+        user_id: req.user.id,
+        action: "project_updated",
+        entity_type: "project",
+        entity_id: id,
+      });
     }
 
     res.status(200).json({
@@ -246,14 +267,19 @@ const deleteProject = asyncHandler(async (req, res) => {
         });
     };
 
-    await notifyProjectDeletion(existingProject.name, existingProject.team_id, req.user?.name || 'System');
-
-    await logActivity({
+    await Promise.all([
+      notifyProjectDeletion(
+        existingProject.name,
+        existingProject.team_id,
+        req.user?.name || "System",
+      ),
+      logActivity({
         user_id: req.user.id,
-        action: 'project_deleted',
-        entity_type: 'project',
+        action: "project_deleted",
+        entity_type: "project",
         entity_id: existingProject.id,
-    });
+      }),
+    ]);
 
     await prisma.project.delete({ where: { id } });
 

@@ -66,14 +66,15 @@ const createMember = asyncHandler(async (req, res) => {
         },
     });
 
-    await notifyTeamJoin(team_id, user_id);
-
-    await logActivity({
+    await Promise.all([
+      notifyTeamJoin(team_id, user_id),
+      logActivity({
         user_id: req.user.id,
-        action: 'team_joined',
-        entity_type: 'team',
+        action: "team_joined",
+        entity_type: "team",
         entity_id: team_id,
-    });
+      }),
+    ]);
 
     res.status(201).json({
         success: true,
@@ -186,21 +187,24 @@ const updateMember = asyncHandler(async (req, res) => {
         },
     });
 
-    if (role && role !== existingMember.role) {
-        await notifyRoleChange(
-            existingMember.team_id,
-            existingMember.user_id,
-            role,
-            req.user?.name || 'System'
-        );
-    }
-
-    await logActivity({
+    await Promise.all([
+      ...(role && role !== existingMember.role
+        ? [
+            notifyRoleChange(
+              existingMember.team_id,
+              existingMember.user_id,
+              role,
+              req.user?.name || "System",
+            ),
+          ]
+        : []),
+      logActivity({
         user_id: req.user.id,
-        action: 'team_updated',
-        entity_type: 'team',
+        action: "team_updated",
+        entity_type: "team",
         entity_id: existingMember.team_id,
-    });
+      }),
+    ]);
 
     res.status(200).json({
         success: true,
@@ -221,18 +225,19 @@ const deleteMember = asyncHandler(async (req, res) => {
         });
     };
 
-    await notifyMemberRemoval(
+    await Promise.all([
+      notifyMemberRemoval(
         existingMember.team_id,
         existingMember.user_id,
-        req.user?.name || 'System'
-    );
-
-    await logActivity({
+        req.user?.name || "System",
+      ),
+      logActivity({
         user_id: req.user.id,
-        action: 'team_left',
-        entity_type: 'team',
+        action: "team_left",
+        entity_type: "team",
         entity_id: existingMember.team_id,
-    });
+      }),
+    ]);
 
     await prisma.teamMember.delete({ where: { id } });
 

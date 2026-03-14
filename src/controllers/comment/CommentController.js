@@ -61,14 +61,15 @@ const createComment = asyncHandler(async (req, res) => {
         },
     });
 
-    await notifyNewComment(task_id, user_id);
-
-    await logActivity({
+    await Promise.all([
+      notifyNewComment(task_id, user_id),
+      logActivity({
         user_id: req.user.id,
-        action: 'comment_added',
-        entity_type: 'comment',
+        action: "comment_added",
+        entity_type: "comment",
         entity_id: newComment.id,
-    });
+      }),
+    ]);
 
     res.status(201).json({
         success: true,
@@ -168,19 +169,20 @@ const deleteComment = asyncHandler(async (req, res) => {
         });
     };
 
-    await notifyCommentDeletion(
-        existingComment.task_id, 
-        existingComment.content, 
-        req.user?.id || 'System', 
-        existingComment.task.assignedUser?.id
-    );
-
-    await logActivity({
+    await Promise.all([
+      notifyCommentDeletion(
+        existingComment.task_id,
+        existingComment.content,
+        req.user?.id || "System",
+        existingComment.task.assignedUser?.id,
+      ),
+      logActivity({
         user_id: req.user.id,
-        action: 'comment_deleted',
-        entity_type: 'comment',
+        action: "comment_deleted",
+        entity_type: "comment",
         entity_id: existingComment.id,
-    });
+      }),
+    ]);
 
     await prisma.comment.delete({ where: { id } });
 
