@@ -37,14 +37,15 @@ const createTeam = asyncHandler(async (req, res) => {
         },
     });
 
-    await notifyTeamCreation(newTeam.id, creatorId);
-
-    await logActivity({
+    await Promise.all([
+      notifyTeamCreation(newTeam.id, creatorId),
+      logActivity({
         user_id: req.user.id,
-        action: 'team_created',
-        entity_type: 'team',
+        action: "team_created",
+        entity_type: "team",
         entity_id: newTeam.id,
-    });
+      }),
+    ]);
 
     res.status(201).json({
         success: true,
@@ -205,14 +206,15 @@ const deleteTeam = asyncHandler(async (req, res) => {
         });
     };
 
-    await notifyTeamDeletion(id, req.user?.name || 'System');
-
-    await logActivity({
+    await Promise.all([
+      notifyTeamDeletion(id, req.user?.name || "System"),
+      logActivity({
         user_id: req.user.id,
-        action: 'team_deleted',
-        entity_type: 'team',
+        action: "team_deleted",
+        entity_type: "team",
         entity_id: existingTeam.id,
-    });
+      }),
+    ]);
 
     await prisma.teamMember.deleteMany({ where: { team_id: id } });
     await prisma.team.delete({ where: { id } });

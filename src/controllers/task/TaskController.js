@@ -63,16 +63,23 @@ const createTask = asyncHandler(async (req, res) => {
         },
     });
 
-    if (assign_to) {
-        await notifyTaskAssignment(newTask.id, assign_to, req.user?.name || 'System');
-    }
-
-    await logActivity({
+    await Promise.all([
+      ...(assign_to
+        ? [
+            notifyTaskAssignment(
+              newTask.id,
+              assign_to,
+              req.user?.name || "System",
+            ),
+          ]
+        : []),
+      logActivity({
         user_id: req.user.id,
-        action: 'task_created',
-        entity_type: 'task',
+        action: "task_created",
+        entity_type: "task",
         entity_id: newTask.id,
-    });
+      }),
+    ]);
 
     res.status(201).json({
         success: true,
@@ -247,45 +254,55 @@ const updateTask = asyncHandler(async (req, res) => {
         },
     });
 
-    if (assign_to && assign_to !== currentTask.assign_to) {
-        await notifyTaskAssignment(id, assign_to, req.user?.name || 'System');
-        await logActivity({
-            user_id: req.user.id,
-            action: 'task_assigned',
-            entity_type: 'task',
-            entity_id: id,
-        });
-    }
+    const hasSpecificChange =
+      (assign_to && assign_to !== currentTask.assign_to) ||
+      (status && status !== currentTask.status) ||
+      (priority && priority !== currentTask.priority);
 
-    if (status && status !== currentTask.status) {
-        await notifyTaskStatusChange(id, status, req.user?.name || 'System');
-        await logActivity({
-            user_id: req.user.id,
-            action: status === 'done' ? 'task_completed' : 'status_updated',
-            entity_type: 'task',
-            entity_id: id,
-        });
-    }
-
-    if (priority && priority !== currentTask.priority) {
-        await logActivity({
-            user_id: req.user.id,
-            action: 'priority_changed',
-            entity_type: 'task',
-            entity_id: id,
-        });
-    }
-
-    const hasSpecificChange = (assign_to && assign_to !== currentTask.assign_to) || (status && status !== currentTask.status) || (priority && priority !== currentTask.priority);
-
-    if (!hasSpecificChange) {
-        await logActivity({
-            user_id: req.user.id,
-            action: 'task_updated',
-            entity_type: 'task',
-            entity_id: id,
-        });
-    }
+    await Promise.all([
+      ...(assign_to && assign_to !== currentTask.assign_to
+        ? [
+            notifyTaskAssignment(id, assign_to, req.user?.name || "System"),
+            logActivity({
+              user_id: req.user.id,
+              action: "task_assigned",
+              entity_type: "task",
+              entity_id: id,
+            }),
+          ]
+        : []),
+      ...(status && status !== currentTask.status
+        ? [
+            notifyTaskStatusChange(id, status, req.user?.name || "System"),
+            logActivity({
+              user_id: req.user.id,
+              action: status === "done" ? "task_completed" : "status_updated",
+              entity_type: "task",
+              entity_id: id,
+            }),
+          ]
+        : []),
+      ...(priority && priority !== currentTask.priority
+        ? [
+            logActivity({
+              user_id: req.user.id,
+              action: "priority_changed",
+              entity_type: "task",
+              entity_id: id,
+            }),
+          ]
+        : []),
+      ...(!hasSpecificChange
+        ? [
+            logActivity({
+              user_id: req.user.id,
+              action: "task_updated",
+              entity_type: "task",
+              entity_id: id,
+            }),
+          ]
+        : []),
+    ]);
 
     res.status(200).json({
         success: true,
@@ -311,16 +328,23 @@ const deleteTask = asyncHandler(async (req, res) => {
         });
     }
 
-    if (existingTask.assign_to) {
-        await notifyTaskDeletion(existingTask.title, existingTask.assign_to, req.user?.name || 'System');
-    }
-    
-    await logActivity({
+    await Promise.all([
+      ...(existingTask.assign_to
+        ? [
+            notifyTaskDeletion(
+              existingTask.title,
+              existingTask.assign_to,
+              req.user?.name || "System",
+            ),
+          ]
+        : []),
+      logActivity({
         user_id: req.user.id,
-        action: 'task_deleted',
-        entity_type: 'task',
+        action: "task_deleted",
+        entity_type: "task",
         entity_id: existingTask.id,
-    });
+      }),
+    ]);
 
     await prisma.task.delete({ where: { id } });
 
